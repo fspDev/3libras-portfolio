@@ -1,128 +1,101 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto:wght@400;500;700&family=Syncopate:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Syncopate:wght@400;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-void: #000000;
-  --color-black: #000000;
-  --color-matter: #EDE9DF;
-  --color-signal: #C8972A;
-  --color-noise: #111111;
+  /* Paleta "Proporción y sinapsis" — papel kraft + tinta sepia */
+  --color-paper: #F3DAA2;
+  --color-paper-2: #EFD296;
+  --color-card: #F2D9A0;
+  --color-ink: #5A4632;
+  --color-ink-soft: #7A6347;
+  --color-signal: #C8772A;
+  --color-ember: #8E4B1C;
+  --color-cream: #F6E3B8;
+  --color-line: #C9A86B;
 
   --phi: 1.618;
 
-  /* Typography Scale based on Phi (1.618) - Fluid values */
-  --f-0: clamp(14px, 1vw + 12px, 16px);
-  --f-1: clamp(20px, 2vw + 16px, 26px);
-  --f-2: clamp(28px, 3vw + 22px, 42px);
-  --f-3: clamp(40px, 5vw + 34px, 68px);
-  --f-4: clamp(60px, 10vw + 60px, 110px);
-
-  --s-1: clamp(21px, 4vw, 34px);
-  --s-2: clamp(34px, 6vw, 55px);
-  --s-3: clamp(55px, 8vw, 89px);
-  --s-4: clamp(89px, 10vw, 144px);
-
   --font-sans: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   --font-display: 'Syncopate', sans-serif;
 }
 
 @layer base {
   html {
-    background-color: #000000;
+    background-color: var(--color-paper);
+    scroll-behavior: smooth;
   }
 
   body {
-    background-color: #000000;
-    @apply text-matter font-sans antialiased selection:bg-signal selection:text-void;
+    background-color: var(--color-paper);
+    @apply text-ink font-sans antialiased selection:bg-signal selection:text-cream;
     margin: 0;
     min-height: 100vh;
     overflow-x: hidden;
   }
 
-  h1 {
-    font-size: var(--f-4);
-    @apply font-bold tracking-tighter leading-[0.85];
-  }
-
-  h2 {
-    font-size: var(--f-3);
-    @apply font-bold tracking-tight leading-tight;
-  }
-
-  h3 {
-    font-size: var(--f-2);
-    @apply font-bold tracking-tight leading-tight;
-  }
-
-  h4 {
-    font-size: var(--f-1);
-    @apply font-bold tracking-normal leading-normal;
-  }
-
-  p {
-    font-family: 'Roboto', sans-serif;
-    color: var(--color-matter);
-    font-weight: 400;
-    line-height: 1.6;
-    letter-spacing: 0.01em;
+  h1, h2, h3, h4 {
+    font-weight: 300;
+    letter-spacing: -0.02em;
   }
 }
 
 @layer components {
-  .section-pane {
-    padding: var(--s-2);
-    border-bottom: 1px solid var(--noise);
-    @apply flex flex-col;
+  /* Etiqueta mono pequeña: "Ø 1.618 —— ESTUDIO..." */
+  .label-mono {
+    @apply font-mono uppercase text-[10px] tracking-[0.18em];
   }
 
-  .section-header {
-    @apply text-[11px] uppercase tracking-[0.2em] text-signal mb-[21px] flex items-center gap-2;
+  /* Encabezado de sección: "01 CAPACIDADES" */
+  .eyebrow {
+    @apply flex items-center gap-3 uppercase text-[11px] tracking-[0.35em] font-normal;
+  }
+  .eyebrow > span:first-child {
+    @apply font-mono text-signal tracking-normal font-medium;
   }
 
-  .section-header::after {
-    content: '';
-    @apply h-[1px] bg-noise flex-1;
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-3 bg-signal text-cream px-6 py-3.5 uppercase text-[11px] tracking-[0.18em] font-semibold transition-colors hover:bg-ember;
   }
 
-  .service-card {
-    @apply border border-noise p-[13px] flex flex-col justify-between h-[144px] bg-white/2 transition-all;
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-3 border border-ink/50 text-ink px-6 py-3.5 uppercase text-[11px] tracking-[0.18em] font-medium transition-colors hover:bg-ink hover:text-cream;
   }
 
-  .project-item {
-    @apply relative h-[233px] bg-noise overflow-hidden border border-noise;
+  .chip {
+    @apply font-mono uppercase text-[9px] tracking-[0.12em] border border-signal/60 text-ink-soft px-2 py-1;
+  }
+
+  /* Fondo de boceto (la hoja de construcción del cerebro) */
+  .sketch-bg {
+    background-image:
+      linear-gradient(var(--sketch-tint, rgba(243, 218, 162, 0.55)), var(--sketch-tint, rgba(243, 218, 162, 0.55))),
+      url('/sketch.webp');
+    background-size: cover;
+    background-position: center;
   }
 }
 
-/* Custom Cursor Styles */
-.custom-cursor {
-  position: fixed;
-  width: 8px;
-  height: 8px;
-  background-color: var(--color-signal);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 9999;
-  transform: translate(-50%, -50%);
-  transition: transform 0.1s ease-out;
+/* Nodos sinápticos sobre el cerebro */
+@keyframes synapse {
+  0%, 100% { opacity: 0.55; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+.synapse-node {
+  animation: synapse 3.2s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
 }
 
-.cursor-dot {
-  position: fixed;
-  width: 4px;
-  height: 4px;
-  background-color: var(--color-signal);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 9998;
-  opacity: 0.5;
-  transform: translate(-50%, -50%);
+@keyframes pulse-line {
+  to { stroke-dashoffset: -40; }
+}
+.synapse-line {
+  stroke-dasharray: 3 7;
+  animation: pulse-line 2.4s linear infinite;
 }
 
-.scroll-dot {
-  @apply w-[5px] h-[5px] rounded-full bg-noise transition-all duration-300;
-}
-
-.scroll-dot.active {
-  @apply bg-signal;
-  box-shadow: 0 0 8px var(--color-signal);
+@media (prefers-reduced-motion: reduce) {
+  .synapse-node, .synapse-line { animation: none; }
+  html { scroll-behavior: auto; }
 }

@@ -1,12 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform, useSpring, AnimatePresence } from 'motion/react';
+import { useState, type ReactNode, type FormEvent } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowRight,
+  ArrowUpRight,
   Monitor,
   Smartphone,
-  Cpu,
-  Instagram,
-  MessageCircle,
+  PanelsTopLeft,
   X,
   Send,
   Loader2
@@ -16,10 +15,13 @@ import {
  * CONSTANTS & DATA
  */
 const SERVICES = [
-  { 
-    id: 'web', 
-    name: 'Diseño Web', 
-    desc: 'Interfaces precisas y funcionales.', 
+  {
+    id: 'web',
+    name: 'Diseño Web',
+    ratio: '1.618',
+    tagline: 'Interfaces precisas y funcionales.',
+    desc: 'Arquitectura de información, UX/UI y desarrollo front-end. Sitios que se entienden al primer vistazo y crecen sin perder su orden.',
+    tags: ['UX/UI', 'React', 'TypeScript', 'SEO técnico'],
     icon: Monitor,
     process: [
       { step: '01', title: 'Análisis de Datos', desc: 'Descomposición de requerimientos y objetivos de usuario.' },
@@ -28,10 +30,13 @@ const SERVICES = [
       { step: '04', title: 'Despliegue', desc: 'Optimización de performance y puesta en producción.' }
     ]
   },
-  { 
-    id: 'app', 
-    name: 'Desarrollo App', 
-    desc: 'Soluciones móviles nativas.', 
+  {
+    id: 'app',
+    name: 'Desarrollo App',
+    ratio: '1',
+    tagline: 'Soluciones móviles nativas.',
+    desc: 'Aplicaciones y web apps que convierten procesos complejos en flujos simples, del panel de gestión al bolsillo.',
+    tags: [],
     icon: Smartphone,
     process: [
       { step: '01', title: 'Definición Lógica', desc: 'Mapeo de funcionalidades y casos de borde.' },
@@ -40,11 +45,14 @@ const SERVICES = [
       { step: '04', title: 'Iteración', desc: 'Testeo de estrés y refinamiento continuo.' }
     ]
   },
-  { 
-    id: 'brand', 
-    name: 'Identidad Visual', 
-    desc: 'Sistemas gráficos analíticos.', 
-    icon: Cpu,
+  {
+    id: 'brand',
+    name: 'Identidad Visual',
+    ratio: '0.618',
+    tagline: 'Sistemas gráficos analíticos.',
+    desc: 'Marcas construidas sobre geometría: retículas y proporciones que sostienen cada pieza, de la pantalla a la gran escala.',
+    tags: [],
+    icon: PanelsTopLeft,
     process: [
       { step: '01', title: 'Abstracción', desc: 'Identificación de los axiomas centrales de la marca.' },
       { step: '02', title: 'Geometrización', desc: 'Construcción técnica de símbolos y logotipos.' },
@@ -52,6 +60,12 @@ const SERVICES = [
       { step: '04', title: 'Manual de Uso', desc: 'Protocolos de aplicación y escalabilidad.' }
     ]
   },
+];
+
+const METHOD = [
+  { mult: '×1', title: 'Análisis', desc: 'Descomponemos el problema en sus axiomas: objetivo, público, restricciones y datos reales. Primero entender, después diseñar.' },
+  { mult: '×φ', title: 'Síntesis', desc: 'Cruzamos referencias, datos e intuición. Como en una sinapsis, cada nueva relación abre un camino que antes no existía.' },
+  { mult: '×φ²', title: 'Resolución', desc: 'Ordenamos la idea con retícula, jerarquía y ritmo. La solución final es simple porque todo lo complejo quedó resuelto antes.' },
 ];
 
 const PROJECTS = [
@@ -87,251 +101,214 @@ const PROJECTS = [
   }
 ];
 
-/**
- * UTILS & HOOKS
- */
-function useWindowSize() {
-  const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
-  useEffect(() => {
-    const updateSize = () => setSize({ width: window.innerWidth, height: window.innerHeight });
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
-  return size;
-}
+const NAV = [
+  { href: '#capacidades', label: 'Capacidades' },
+  { href: '#metodo', label: 'Método' },
+  { href: '#proyectos', label: 'Proyectos' },
+  { href: '#filosofia', label: 'Filosofía' },
+];
 
-function useCustomCursor() {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isHovering, setIsHovering] = useState(false);
+const FIBONACCI = [1, 1, 2, 3, 5, 8, 13, 21, 34];
 
-  useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      setPosition({ x: e.clientX, y: e.clientY });
-    };
-
-    const onMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('button, a, .group')) {
-        setIsHovering(true);
-      } else {
-        setIsHovering(false);
-      }
-    };
-
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseover', onMouseOver);
-
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseover', onMouseOver);
-    };
-  }, []);
-
-  return { position, isHovering };
-}
+// Nodos sinápticos sobre el cerebro (coordenadas de la imagen 1536×1024)
+const SYNAPSES: [number, number][] = [
+  [560, 330], [705, 255], [780, 405], [905, 240], [1010, 330], [1140, 300],
+  [610, 520], [800, 555], [955, 470], [1095, 525], [1235, 430],
+  [700, 690], [885, 650], [1065, 625],
+];
+const SYNAPSE_LINKS: [number, number][] = [
+  [0, 1], [1, 2], [1, 3], [3, 4], [4, 5], [2, 4], [0, 6], [6, 7], [2, 7],
+  [7, 8], [8, 4], [8, 9], [9, 10], [5, 10], [6, 11], [11, 12], [7, 12], [12, 13], [9, 13],
+];
 
 /**
  * COMPONENTS
  */
 
-const TransformingLogo = () => {
-  const { scrollY } = useScroll();
-  const { width, height } = useWindowSize();
-
-  const threshold = 180;
-
-  const rawProgress = useTransform(scrollY, [0, threshold], [0, 1]);
-  const progress = useSpring(rawProgress, { stiffness: 80, damping: 20 });
-
-  const finalX = -(width / 2) + 110;
-  const finalY = -(height / 2) + 40;
-
-  const x = useTransform(progress, [0, 1], [0, finalX]);
-  const y = useTransform(progress, [0, 1], [0, finalY]);
-
-  const threeSize = useTransform(progress, [0, 1], [260, 24]);
-  const librasSize = useTransform(progress, [0, 1], [36, 14]);
-  const lineW = useTransform(progress, [0, 1], [55, 2]);
-  const lineH = useTransform(progress, [0, 1], [2, 24]);
-  const letterSpacing = useTransform(progress, [0, 1], ["0.4em", "0.15em"]);
-
-  // Relative positions based on the SVG snippet
-  // Hero (p=0): 
-  // 3 is at baseline (0)
-  // Line is at y=55 (255-200), x starting near 5
-  // LIBRAS is at y=65 (265-200), x starting at 80
-
-  // Navbar (p=1):
-  // Compact horizontal: 3 [gap] | [gap] LIBRAS
-  const lineX = useTransform(progress, [0, 1], [0, 32]);
-  const lineY = useTransform(progress, [0, 1], [160, 0]);
-
-  const librasX = useTransform(progress, [0, 1], [0, 100]);
-  const librasY = useTransform(progress, [0, 1], [210, 0]);
-
-  return (
-    <>
-      <motion.div
-        className="fixed top-0 left-0 right-0 h-20 bg-void/80 backdrop-blur-xl z-[90] border-b border-white/[0.03] pointer-events-none"
-        style={{ opacity: useTransform(scrollY, [150, 250], [0, 1]) }}
-      />
-      <motion.div
-        className="fixed inset-0 flex items-center justify-center z-[100] pointer-events-none"
-        style={{ x, y }}
-      >
-        <div className="relative flex items-center justify-center">
-          {/* THE 3 */}
-          <motion.div
-            style={{ fontSize: threeSize }}
-            className="font-display font-normal leading-none select-none text-matter"
-          >
-            3
-          </motion.div>
-
-          {/* THE SEPARATOR (Rule) */}
-          <motion.div
-            style={{
-              width: lineW,
-              height: lineH,
-              x: lineX,
-              y: lineY,
-              position: 'absolute',
-              backgroundColor: 'var(--color-signal)'
-            }}
-          />
-
-          {/* LIBRAS */}
-          <motion.div
-            style={{
-              fontSize: librasSize,
-              letterSpacing,
-              x: librasX,
-              y: librasY,
-              position: 'absolute'
-            }}
-            className="font-display font-normal whitespace-nowrap text-matter origin-left"
-          >
-            LIBRAS
-          </motion.div>
-        </div>
-      </motion.div>
-    </>
-  );
-};
-
-const FibonacciSpiral = () => (
-  <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-[0.20]">
-    <motion.div 
-      animate={{ 
-        rotate: 360,
-      }}
-      transition={{ 
-        duration: 60, 
-        repeat: Infinity, 
-        ease: "linear" 
-      }}
-      className="w-full h-full flex items-center justify-center"
-    >
-      <svg 
-        viewBox="0 0 1000 1000" 
-        className="w-[180%] h-[180%] text-signal stroke-current fill-none"
-      >
-        {/* Fibonacci Circles Construction (Right side of the reference image) */}
-        <circle cx="500" cy="500" r="377" strokeWidth="0.8" />
-        <circle cx="618" cy="500" r="233" strokeWidth="0.6" />
-        <circle cx="689" cy="500" r="144" strokeWidth="0.5" />
-        <circle cx="733" cy="500" r="89" strokeWidth="0.4" />
-        <circle cx="760" cy="500" r="55" strokeWidth="0.3" />
-        <circle cx="777" cy="500" r="34" strokeWidth="0.2" />
-        <circle cx="788" cy="500" r="21" strokeWidth="0.1" />
-        
-        {/* Supporting technical lines */}
-        <line x1="123" y1="500" x2="877" y2="500" strokeWidth="0.2" strokeDasharray="4 4" />
-        <circle cx="500" cy="500" r="2" fill="currentColor" />
-      </svg>
-    </motion.div>
-  </div>
+const Logo = () => (
+  <a href="#top" className="flex items-center gap-3 text-ink">
+    <span className="font-display text-[22px] leading-none">3</span>
+    <span className="w-px h-5 bg-signal" />
+    <span className="font-display text-[11px] tracking-[0.35em] text-ink-soft">LIBRAS</span>
+  </a>
 );
 
-const ServiceDetail = ({ service, onClose }: { service: typeof SERVICES[0]; onClose: () => void }) => {
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/95 backdrop-blur-md"
-    >
-      <motion.div 
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="w-full max-w-4xl bg-noise/5 border border-signal/30 p-13 relative overflow-hidden"
-      >
-        <button 
-          onClick={onClose}
-          className="absolute top-8 right-8 text-matter/40 hover:text-signal transition-colors cursor-none z-10"
-        >
-          <X className="w-6 h-6" />
+const Navbar = ({ onContact }: { onContact: () => void }) => (
+  <header className="fixed top-0 inset-x-0 z-50 bg-paper/85 backdrop-blur-md border-b border-line/50">
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
+      <Logo />
+      <nav className="flex items-center gap-8">
+        <ul className="hidden md:flex items-center gap-8">
+          {NAV.map((n) => (
+            <li key={n.href}>
+              <a href={n.href} className="uppercase text-[11px] tracking-[0.18em] text-ink hover:text-signal transition-colors">
+                {n.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <button onClick={onContact} className="border border-ink/60 px-4 py-2 uppercase text-[11px] tracking-[0.18em] font-semibold hover:bg-ink hover:text-cream transition-colors">
+          Hablemos
         </button>
+      </nav>
+    </div>
+  </header>
+);
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-13">
-          <div className="md:col-span-1">
-            <span className="text-signal text-[11px] font-mono mb-2 block uppercase tracking-widest">Protocolo // {service.id}</span>
-            <h3 className="text-4xl font-bold uppercase tracking-tighter mb-8 leading-none">{service.name}</h3>
-            <p className="text-matter/60 text-sm leading-relaxed mb-8">{service.desc}</p>
-            <service.icon className="w-13 h-13 text-signal opacity-20" />
-          </div>
-
-          <div className="md:col-span-2">
-            <div className="space-y-6">
-              {service.process.map((p, i) => (
-                <motion.div 
-                  key={p.step}
-                  initial={{ x: 20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="group"
-                >
-                  <div className="flex items-start gap-6 border-l border-white/10 pl-8 group-hover:border-signal transition-colors py-2">
-                    <span className="text-signal text-[10px] font-mono pt-1">{p.step}</span>
-                    <div>
-                      <h4 className="text-[14px] uppercase font-bold tracking-widest mb-1 group-hover:text-signal transition-colors">{p.title}</h4>
-                      <p className="text-[11px] text-matter/50 leading-relaxed max-w-md">{p.desc}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-            
-            <div className="mt-13 pt-13 border-t border-white/5 flex justify-end">
-              <button 
-                onClick={onClose}
-                className="text-[10px] uppercase tracking-[0.4em] text-signal font-bold hover:text-matter transition-colors cursor-none"
-              >
-                Cerrar Protocolo_
-              </button>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-const SectionHeader = ({ title, prefix }: { title: string; prefix: string }) => (
-  <div className="flex items-center gap-4 mb-13 opacity-80 mt-21">
-    <span className="text-signal text-[11px] font-mono">{prefix}</span>
-    <h2 className="text-[14px] uppercase tracking-widest font-bold">{title}</h2>
-    <div className="h-[1px] bg-noise flex-1 opacity-20" />
+const SynapticBrain = () => (
+  <div className="relative w-full aspect-[3/2] scale-[1.12] origin-center">
+    <img
+      src="/brain.webp"
+      alt="Cerebro de papel plegado"
+      className="absolute inset-0 w-full h-full object-contain mix-blend-multiply"
+    />
+    <svg viewBox="0 0 1536 1024" className="absolute inset-0 w-full h-full" aria-hidden="true">
+      {SYNAPSE_LINKS.map(([a, b], i) => (
+        <line
+          key={i}
+          x1={SYNAPSES[a][0]} y1={SYNAPSES[a][1]}
+          x2={SYNAPSES[b][0]} y2={SYNAPSES[b][1]}
+          stroke="#FFF6DE"
+          strokeWidth="1.5"
+          className="synapse-line"
+          style={{ opacity: 0.55, animationDelay: `${i * 0.13}s` }}
+        />
+      ))}
+      {SYNAPSES.map(([x, y], i) => (
+        <circle
+          key={i}
+          cx={x} cy={y} r="7"
+          fill="#FFF8E6"
+          className="synapse-node"
+          style={{ animationDelay: `${(i * 0.37) % 3}s`, filter: 'drop-shadow(0 0 6px rgba(255,240,200,.9))' }}
+        />
+      ))}
+    </svg>
   </div>
 );
 
-const ContactForm = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+const FibonacciRuler = () => (
+  <div className="border-y border-line/70 bg-paper-2/60" aria-hidden="true">
+    <div className="max-w-6xl mx-auto px-4 sm:px-8 flex h-9">
+      {FIBONACCI.map((n, i) => (
+        <div key={i} className="border-l border-line/70 pl-1.5 flex items-center label-mono text-ink-soft min-w-0" style={{ flexGrow: n, flexBasis: 0 }}>
+          <span className="truncate">{n}</span>
+        </div>
+      ))}
+      <div className="border-x border-line/70 flex items-center justify-end pr-2 label-mono text-ink-soft" style={{ flexGrow: 8, flexBasis: 0 }}>
+        → ∞
+      </div>
+    </div>
+  </div>
+);
+
+const SectionHeader = ({ prefix, label, title, light = false }: { prefix: string; label: string; title: ReactNode; light?: boolean }) => (
+  <div>
+    <div className={`eyebrow ${light ? 'text-cream/70' : 'text-ink-soft'}`}>
+      <span>{prefix}</span>
+      <span>{label}</span>
+    </div>
+    <h2 className={`mt-4 text-[32px] sm:text-[40px] leading-[1.12] ${light ? 'text-cream' : 'text-ink'}`}>{title}</h2>
+  </div>
+);
+
+// Retícula áurea superpuesta en las capturas de proyectos (varía por índice como en el diseño)
+const GoldenOverlay = ({ variant }: { variant: number }) => {
+  const paths = [
+    'M618 0V618 M618 382H1000 M618 382V618 M764 382V618 M618 472H764 M673 382V472',
+    'M382 0V618 M0 382H382 M236 382V618 M236 472H382 M291 382V472',
+    'M382 0V618 M0 236H382 M236 0V236 M236 146H382 M291 146V236',
+  ];
+  return (
+    <svg viewBox="0 0 1000 618" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
+      <path d={paths[variant % paths.length]} stroke="#C9A86B" strokeWidth="1.5" fill="none" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+};
+
+const GoldenDiagram = () => (
+  <figure className="w-full max-w-md lg:ml-auto">
+    <svg viewBox="0 0 420 300" className="w-full" aria-label="Rectángulo áureo: (a + b) / a = a / b = φ">
+      <g stroke="#7A6347" strokeWidth="1" fill="none">
+        <path d="M10 18H410 M10 13V23 M410 13V23" />
+      </g>
+      <text x="210" y="10" textAnchor="middle" className="font-mono" fontSize="11" fill="#5A4632">a + b</text>
+      <rect x="10" y="32" width="400" height="247" fill="rgba(246,227,184,.55)" stroke="#5A4632" strokeWidth="1.2" />
+      <g stroke="#C8772A" strokeWidth="1.2" fill="none">
+        <path d="M257 32V279" />
+        <path d="M257 185H410 M316 185V279 M257 222H316" />
+      </g>
+      <path d="M10 32L257 279" stroke="#7A6347" strokeWidth=".8" strokeDasharray="3 4" />
+      <text x="133" y="296" textAnchor="middle" fontSize="11" fill="#C8772A" className="font-mono">a</text>
+      <text x="333" y="296" textAnchor="middle" fontSize="11" fill="#5A4632" className="font-mono">b</text>
+    </svg>
+    <figcaption className="mt-4">
+      <p className="font-mono text-[13px] text-ink">(a + b) / a = a / b = <span className="text-signal">φ</span></p>
+      <p className="label-mono text-ink-soft mt-1">La proporción que ordena la intuición.</p>
+    </figcaption>
+  </figure>
+);
+
+const Modal = ({ onClose, children, wide = false }: { onClose: () => void; children: ReactNode; wide?: boolean }) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    onClick={onClose}
+    className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-ink/70 backdrop-blur-sm"
+  >
+    <motion.div
+      initial={{ y: 16, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 16, opacity: 0 }}
+      onClick={(e) => e.stopPropagation()}
+      className={`relative w-full ${wide ? 'max-w-4xl' : 'max-w-xl'} max-h-[90vh] overflow-y-auto bg-paper border border-line p-8 sm:p-12 shadow-2xl`}
+    >
+      <button onClick={onClose} aria-label="Cerrar" className="absolute top-6 right-6 text-ink-soft hover:text-signal transition-colors">
+        <X className="w-5 h-5" />
+      </button>
+      {children}
+    </motion.div>
+  </motion.div>
+);
+
+const ServiceDetail = ({ service, onClose }: { service: typeof SERVICES[0]; onClose: () => void }) => (
+  <Modal onClose={onClose} wide>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+      <div>
+        <span className="label-mono text-signal">Protocolo // {service.id}</span>
+        <h3 className="text-[34px] leading-none mt-3 mb-6">{service.name}</h3>
+        <p className="text-sm leading-relaxed text-ink-soft">{service.desc}</p>
+        <service.icon className="w-12 h-12 text-signal opacity-40 mt-8" strokeWidth={1.25} />
+      </div>
+      <div className="md:col-span-2 space-y-5">
+        {service.process.map((p, i) => (
+          <motion.div
+            key={p.step}
+            initial={{ x: 20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: i * 0.08 }}
+            className="group flex items-start gap-6 border-l border-line pl-6 py-2 hover:border-signal transition-colors"
+          >
+            <span className="font-mono text-[11px] text-signal pt-1">{p.step}</span>
+            <div>
+              <h4 className="uppercase text-[13px] tracking-[0.18em] font-semibold mb-1 group-hover:text-signal transition-colors">{p.title}</h4>
+              <p className="text-[13px] text-ink-soft leading-relaxed">{p.desc}</p>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  </Modal>
+);
+
+const ContactForm = ({ onClose }: { onClose: () => void }) => {
   const [status, setStatus] = useState<'idle' | 'sending' | 'success'>('idle');
-  
-  const handleSubmit = async (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setStatus('sending');
-    
+
     // Simulating email send to 3libras.studio@gmail.com
     // In a real scenario, you would use Formspree or a backend API
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -342,245 +319,273 @@ const ContactForm = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
     }, 2500);
   };
 
-  if (!isOpen) return null;
+  const field = 'w-full bg-transparent border-b border-ink/25 py-3 focus:border-signal outline-none transition-colors text-ink placeholder:text-ink/35';
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/95 backdrop-blur-sm"
-    >
-      <motion.div 
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="w-full max-w-xl bg-noise/5 border border-signal/30 p-13 relative overflow-hidden"
-      >
-        <button 
-          onClick={onClose}
-          className="absolute top-8 right-8 text-matter/40 hover:text-signal transition-colors cursor-none"
-        >
-          <X className="w-6 h-6" />
-        </button>
-
-        {status === 'success' ? (
-          <div className="py-21 text-center">
-            <motion.div 
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              className="text-signal mb-8 flex justify-center"
-            >
-              <Send className="w-13 h-13" />
-            </motion.div>
-            <h3 className="text-2xl font-bold uppercase tracking-tighter mb-4">Mensaje Sincronizado</h3>
-            <p className="text-matter/60 text-sm uppercase tracking-widest">Responderemos a la brevedad.</p>
-          </div>
-        ) : (
-          <>
-            <div className="mb-13">
-              <span className="text-signal text-[11px] font-mono mb-2 block">PROTOCOLO_04</span>
-              <h3 className="text-3xl font-bold uppercase tracking-tighter">Iniciar Contacto</h3>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-[0.3em] text-matter/40">Nombre / Organización</label>
-                <input 
-                  required
-                  type="text" 
-                  className="w-full bg-transparent border-b border-white/10 py-3 focus:border-signal outline-none transition-colors text-matter font-sans"
-                  placeholder="Escribe aquí..."
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-[0.3em] text-matter/40">Email de Retorno</label>
-                <input 
-                  required
-                  type="email" 
-                  className="w-full bg-transparent border-b border-white/10 py-3 focus:border-signal outline-none transition-colors text-matter font-sans"
-                  placeholder="email@ejemplo.com"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-[0.3em] text-matter/40">Mensaje / Requerimiento</label>
-                <textarea 
-                  required
-                  rows={4}
-                  className="w-full bg-transparent border-b border-white/10 py-3 focus:border-signal outline-none transition-colors text-matter font-sans resize-none"
-                  placeholder="Describe el objeto de tu consulta..."
-                />
-              </div>
-
-              <button 
-                type="submit"
-                disabled={status === 'sending'}
-                className="w-full py-4 bg-signal text-void font-bold uppercase tracking-[0.4em] text-[12px] hover:bg-matter transition-all flex items-center justify-center gap-3 group cursor-none"
-              >
-                {status === 'sending' ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    Transmitir
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </button>
-            </form>
-          </>
-        )}
-      </motion.div>
-    </motion.div>
+    <Modal onClose={onClose}>
+      {status === 'success' ? (
+        <div className="py-16 text-center">
+          <Send className="w-10 h-10 text-signal mx-auto mb-6" strokeWidth={1.25} />
+          <h3 className="text-[28px]">Mensaje sincronizado</h3>
+          <p className="label-mono text-ink-soft mt-3">Responderemos a la brevedad.</p>
+        </div>
+      ) : (
+        <>
+          <span className="label-mono text-signal">Punto de sincronización</span>
+          <h3 className="text-[32px] mt-2 mb-10">Iniciar un proyecto</h3>
+          <form onSubmit={handleSubmit} className="space-y-7">
+            <label className="block">
+              <span className="label-mono text-ink-soft">Nombre / Organización</span>
+              <input required type="text" className={field} placeholder="Escribí aquí..." />
+            </label>
+            <label className="block">
+              <span className="label-mono text-ink-soft">Email de retorno</span>
+              <input required type="email" className={field} placeholder="email@ejemplo.com" />
+            </label>
+            <label className="block">
+              <span className="label-mono text-ink-soft">Mensaje / Requerimiento</span>
+              <textarea required rows={4} className={`${field} resize-none`} placeholder="Contanos qué querés resolver..." />
+            </label>
+            <button type="submit" disabled={status === 'sending'} className="btn-primary w-full group">
+              {status === 'sending' ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>Transmitir <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>
+              )}
+            </button>
+          </form>
+        </>
+      )}
+    </Modal>
   );
 };
 
+const reveal = {
+  initial: { opacity: 0, y: 24 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, margin: '-80px' },
+  transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
+};
+
 export default function App() {
-  const { position, isHovering } = useCustomCursor();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<typeof SERVICES[0] | null>(null);
+  const openForm = () => setIsFormOpen(true);
 
   return (
-    <div className="text-matter selection:bg-signal selection:text-void min-h-screen font-sans overflow-x-hidden cursor-none relative" style={{ backgroundColor: '#000000' }}>
-      <FibonacciSpiral />
-      {/* CUSTOM CURSOR */}
-      <motion.div
-        className="fixed top-0 left-0 w-8 h-8 border border-signal rounded-full pointer-events-none z-[9999]"
-        animate={{
-          x: position.x - 16,
-          y: position.y - 16,
-          scale: isHovering ? 1.5 : 1,
-          backgroundColor: isHovering ? 'rgba(200, 151, 42, 0.2)' : 'rgba(200, 151, 42, 0)'
-        }}
-        transition={{ type: 'spring', stiffness: 150, damping: 20, mass: 0.5 }}
-      />
-      <motion.div
-        className="fixed top-0 left-0 w-1.5 h-1.5 bg-signal rounded-full pointer-events-none z-[9999]"
-        animate={{
-          x: position.x - 3,
-          y: position.y - 3
-        }}
-        transition={{ type: 'spring', stiffness: 250, damping: 25, mass: 0.1 }}
-      />
+    <div id="top" className="min-h-screen bg-paper text-ink font-sans overflow-x-hidden">
+      <Navbar onContact={openForm} />
 
-      <TransformingLogo />
       <AnimatePresence>
-        {isFormOpen && <ContactForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} />}
+        {isFormOpen && <ContactForm onClose={() => setIsFormOpen(false)} />}
         {selectedService && <ServiceDetail service={selectedService} onClose={() => setSelectedService(null)} />}
       </AnimatePresence>
 
       {/* HERO */}
-      <section className="h-[60vh] flex flex-col items-center justify-end pb-13">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1, duration: 1.5 }}
-          className="text-left z-10"
-        >
-        </motion.div>
+      <section className="sketch-bg pt-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-16 lg:pt-20 pb-10 grid lg:grid-cols-[1fr_1.35fr] gap-8 items-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
+            <p className="label-mono text-ink-soft flex items-center gap-3">
+              <span className="whitespace-nowrap">Ø 1.618</span> <span className="w-10 h-px shrink-0 bg-ink-soft/60" /> Estudio de diseño y desarrollo
+            </p>
+            <h1 className="mt-6 text-[44px] sm:text-[56px] leading-[1.05] tracking-[-0.03em]">
+              Creatividad<br />que conecta.<br />
+              <span className="text-ember font-normal">Soluciones en<br />proporción.</span>
+            </h1>
+            <p className="mt-6 max-w-md text-[15px] leading-relaxed text-ink">
+              Pensamos como una red neuronal y construimos como una ecuación: conectamos ideas, datos e intuición, y les damos la forma exacta para resolver lo que tu proyecto necesita.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button onClick={openForm} className="btn-primary group">
+                Iniciar un proyecto <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <a href="#metodo" className="btn-ghost">Ver el método</a>
+            </div>
+            <p className="mt-8 label-mono text-ink-soft">Diseño web — Desarrollo app — Identidad visual</p>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.2, delay: 0.2 }}>
+            <SynapticBrain />
+          </motion.div>
+        </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-6 hidden sm:flex justify-end gap-24 label-mono text-ink-soft">
+          <span>Cada pliegue, una conexión posible.</span>
+          <span>Análisis → Síntesis → Resolución</span>
+        </div>
       </section>
 
-      {/* CONTENT */}
-      <main className="max-w-5xl px-8 mx-auto relative z-10">
+      <FibonacciRuler />
 
-        <section id="servicios" className="py-21">
-          <SectionHeader prefix="01" title="Capacidades" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {SERVICES.map((s) => (
-              <motion.div
+      {/* 01 CAPACIDADES */}
+      <section id="capacidades" className="sketch-bg py-20 sm:py-24 scroll-mt-16" style={{ ['--sketch-tint' as string]: 'rgba(243, 218, 162, 0.72)' }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-8">
+          <motion.div {...reveal} className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <SectionHeader prefix="01" label="Capacidades" title={<>Tres disciplinas, un mismo<br className="hidden sm:block" /> sistema de pensamiento.</>} />
+            <span className="label-mono text-ink-soft">Retícula 1 : 0,618</span>
+          </motion.div>
+
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-[1.618fr_1fr] md:grid-rows-2 gap-4">
+            {SERVICES.map((s, i) => (
+              <motion.button
                 key={s.id}
-                whileHover={{ y: -5 }}
+                {...reveal}
+                transition={{ ...reveal.transition, delay: i * 0.1 }}
                 onClick={() => setSelectedService(s)}
-                className="border border-signal/30 p-8 h-[233px] flex flex-col justify-between group bg-white/[0.01] cursor-none"
+                className={`group flex flex-col justify-start text-left bg-card/90 border border-line/80 p-6 sm:p-7 hover:border-signal hover:bg-cream/80 transition-colors ${i === 0 ? 'md:row-span-2' : ''}`}
               >
-                <div>
-                  <s.icon className="w-5 h-5 text-signal mb-8 opacity-30 group-hover:opacity-100 transition-opacity" />
-                  <h3 className="text-[15px] uppercase tracking-[0.2em] font-bold mb-3">{s.name}</h3>
-                  <p className="text-[12px] opacity-70 leading-relaxed">{s.desc}</p>
+                <div className="flex justify-between items-start">
+                  <s.icon className="w-6 h-6 text-signal" strokeWidth={1.25} />
+                  <span className="font-mono text-[10px] text-ink-soft">{s.ratio}</span>
                 </div>
-                <ArrowRight className="w-4 h-4 text-signal opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0" />
+                <h3 className="mt-5 uppercase text-[12px] tracking-[0.22em] font-semibold">{s.name}</h3>
+                <p className={`mt-3 ${i === 0 ? 'text-[20px]' : 'text-[17px]'} font-light`}>{s.tagline}</p>
+                <p className="mt-4 text-[13px] leading-relaxed text-ink-soft max-w-md">{s.desc}</p>
+                {s.tags.length > 0 && (
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {s.tags.map((t) => <span key={t} className="chip">{t}</span>)}
+                  </div>
+                )}
+                <span className="mt-6 inline-flex items-center gap-2 label-mono text-signal opacity-0 group-hover:opacity-100 transition-opacity">
+                  Ver protocolo <ArrowRight className="w-3 h-3" />
+                </span>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 02 MÉTODO */}
+      <section id="metodo" className="bg-ink text-cream py-20 sm:py-24 scroll-mt-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8">
+          <motion.div {...reveal} className="grid lg:grid-cols-[1.618fr_1fr] gap-8 items-end">
+            <SectionHeader
+              light
+              prefix="02"
+              label="Método"
+              title={<>Pensar como una red.<br /><span className="text-[#E9A866]">Resolver como una ecuación.</span></>}
+            />
+            <p className="text-[14px] leading-relaxed text-cream/75">
+              La creatividad no es un destello aislado: es una conexión nueva entre ideas que ya existían. Nuestro proceso multiplica esas conexiones y después las ordena con proporción, hasta que la solución encaja.
+            </p>
+          </motion.div>
+
+          <div className="mt-14 grid md:grid-cols-3 gap-10 md:gap-6">
+            {METHOD.map((m, i) => (
+              <motion.div key={m.title} {...reveal} transition={{ ...reveal.transition, delay: i * 0.15 }}>
+                <div className="flex items-center gap-3 h-6">
+                  <span className="relative flex items-center justify-center shrink-0" style={{ width: 12 + i * 6, height: 12 + i * 6 }}>
+                    {i > 0 && <span className="absolute inset-0 rounded-full border border-signal" />}
+                    {i > 1 && <span className="absolute inset-[3px] rounded-full border border-signal/60" />}
+                    <span className={`rounded-full ${i === 2 ? 'bg-cream' : 'bg-signal'}`} style={{ width: 8, height: 8 }} />
+                  </span>
+                  <span className="h-px flex-1 bg-signal/50" />
+                </div>
+                <p className="mt-5 font-mono text-[11px] text-cream/50">{m.mult}</p>
+                <h3 className="mt-2 text-[22px] font-normal">{m.title}</h3>
+                <p className="mt-3 text-[13px] leading-relaxed text-cream/70">{m.desc}</p>
               </motion.div>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section id="proyectos" className="py-21">
-          <SectionHeader prefix="02" title="Selección" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-13">
-            {PROJECTS.map((p) => (
-              <a
-                key={p.id}
-                href={p.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group cursor-none overflow-hidden border border-signal/20 block bg-white/[0.01]"
-              >
-                <div className="aspect-[4/3] overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-1000">
-                  <img src={p.img} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-1000" />
-                </div>
-                <div className="p-8">
-                  <div className="flex justify-between items-baseline mb-2">
-                    <h4 className="text-xl font-bold uppercase tracking-tighter">{p.title}</h4>
-                    <span className="text-[9px] font-mono text-signal">{p.year}</span>
+      {/* 03 SELECCIÓN */}
+      <section id="proyectos" className="py-20 sm:py-24 scroll-mt-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8">
+          <motion.div {...reveal}>
+            <SectionHeader prefix="03" label="Selección" title={<>Proyectos donde la<br />idea encontró su forma.</>} />
+          </motion.div>
+
+          <ul className="mt-12 border-t border-line">
+            {PROJECTS.map((p, i) => (
+              <motion.li key={p.id} {...reveal} className="border-b border-line">
+                <a href={p.url} target="_blank" rel="noopener noreferrer" className="group grid sm:grid-cols-[1fr_1.618fr] gap-6 sm:gap-10 py-6 items-center">
+                  <div className="relative aspect-[1.618/1] overflow-hidden border border-line bg-card">
+                    <img
+                      src={p.img}
+                      alt={`Captura de ${p.title}`}
+                      className="w-full h-full object-cover object-top sepia-[.55] opacity-80 group-hover:sepia-0 group-hover:opacity-100 group-hover:scale-[1.03] transition-all duration-700"
+                    />
+                    <div className="absolute inset-0 group-hover:opacity-0 transition-opacity duration-700">
+                      <GoldenOverlay variant={i} />
+                    </div>
+                    <span className="absolute left-2 bottom-2 bg-ink text-cream label-mono px-2 py-1">[Captura · {p.title}]</span>
                   </div>
-                  <p className="text-[10px] text-signal uppercase tracking-widest">{p.category} // {p.tech.join(', ')}</p>
-                  <p className="text-[13px] mt-4 leading-relaxed opacity-70 group-hover:opacity-100 transition-opacity">{p.desc}</p>
-                </div>
-              </a>
+                  <div>
+                    <div className="flex justify-between font-mono text-[10px] text-ink-soft">
+                      <span>{String(i + 1).padStart(2, '0')}</span>
+                      <span>{p.year}</span>
+                    </div>
+                    <h3 className="mt-2 text-[30px] sm:text-[36px] uppercase font-normal tracking-[-0.01em] group-hover:text-signal transition-colors">{p.title}</h3>
+                    <p className="mt-1 label-mono text-signal">{p.category} // {p.tech.join(', ')}</p>
+                    <p className="mt-3 text-[14px] leading-relaxed max-w-lg">{p.desc}</p>
+                    <span className="mt-4 inline-flex items-center gap-2 uppercase text-[10px] tracking-[0.18em] font-semibold">
+                      Ver proyecto <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    </span>
+                  </div>
+                </a>
+              </motion.li>
             ))}
-          </div>
-        </section>
+          </ul>
+        </div>
+      </section>
 
-        <section id="metodo" className="py-34 border-t border-noise/10 mt-21">
-          <SectionHeader prefix="03" title="Filosofía" />
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-[34px] leading-tight font-bold uppercase mb-13 tracking-tighter">
-              La precisión es la <span className="text-signal italic">única</span> estética honesta.
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-13 text-[14px] leading-relaxed">
+      {/* 04 FILOSOFÍA */}
+      <section id="filosofia" className="sketch-bg py-20 sm:py-28 scroll-mt-16" style={{ ['--sketch-tint' as string]: 'rgba(232, 200, 140, 0.45)' }}>
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 grid lg:grid-cols-[1.35fr_1fr] gap-12 items-center">
+          <motion.div {...reveal}>
+            <SectionHeader prefix="04" label="Filosofía" title={<>La precisión es la<br />única <span className="text-ember font-normal">estética honesta.</span></>} />
+            <div className="mt-8 bg-card/90 border border-line/80 p-6 grid sm:grid-cols-2 gap-6 text-[13px] leading-relaxed">
               <p>Descomponemos problemas complejos en axiomas geométricos. El diseño no es arte; es la resolución visual de una ecuación de datos.</p>
               <p>Cada pixel en 3 Libras responde a una intención técnica. Respetamos la arquitectura del pensamiento para construir interfaces que funcionen como extensiones de la mente.</p>
             </div>
-          </div>
-        </section>
+          </motion.div>
+          <motion.div {...reveal} transition={{ ...reveal.transition, delay: 0.15 }}>
+            <GoldenDiagram />
+          </motion.div>
+        </div>
+      </section>
 
-        <section id="contacto" className="py-34 text-center">
-          <h3 className="text-[10px] uppercase tracking-[0.6em] text-signal mb-13">Punto de Sincronización</h3>
-          <div className="flex flex-col items-center gap-13">
-            <button 
-              onClick={() => setIsFormOpen(true)}
-              className="text-[42px] md:text-[68px] font-bold uppercase tracking-tighter leading-none hover:text-signal transition-colors text-center cursor-none bg-transparent border-none p-0"
-            >
-              Hablemos<br />del objeto.
-            </button>
+      {/* 05 CONTACTO */}
+      <section id="contacto" className="bg-ink text-cream pt-20 sm:pt-24 pb-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 grid lg:grid-cols-[1.618fr_1fr] gap-12 items-start">
+          <motion.div {...reveal}>
+            <div className="eyebrow text-cream/70"><span>05</span><span>Punto de sincronización</span></div>
+            <h2 className="mt-6 text-[64px] sm:text-[88px] leading-[0.95] font-extralight tracking-[-0.03em] text-cream">
+              Hablemos<br />del <span className="text-[#E9A866] font-light">objeto.</span>
+            </h2>
+            <p className="mt-6 max-w-sm text-[14px] leading-relaxed text-cream/75">
+              Contanos qué querés resolver. Nosotros buscamos la conexión que falta.
+            </p>
+          </motion.div>
 
-            <div className="flex gap-8 mt-8">
-              <a
-                href="https://wa.me/5493513304222"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 px-6 py-3 border border-noise/20 hover:border-signal transition-colors group cursor-none"
-              >
-                <MessageCircle className="w-4 h-4 text-signal" />
-                <span className="text-[11px] uppercase tracking-widest font-bold">WhatsApp</span>
+          <motion.div {...reveal} transition={{ ...reveal.transition, delay: 0.15 }} className="border-y border-cream/15 lg:mt-6">
+            {[
+              { k: 'Escribinos', label: 'WhatsApp', href: 'https://wa.me/5493513304222' },
+              { k: 'Seguinos', label: 'Instagram', href: 'https://www.instagram.com/3libras.studio/' },
+            ].map((c) => (
+              <a key={c.label} href={c.href} target="_blank" rel="noopener noreferrer" className="group flex items-center justify-between py-4 border-b border-cream/15 hover:text-[#E9A866] transition-colors">
+                <span>
+                  <span className="block label-mono text-cream/50 text-[9px]">{c.k}</span>
+                  <span className="block text-[18px] mt-0.5">{c.label}</span>
+                </span>
+                <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </a>
-              <a
-                href="https://www.instagram.com/3libras.studio/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 px-6 py-3 border border-noise/20 hover:border-signal transition-colors group cursor-none"
-              >
-                <Instagram className="w-4 h-4 text-signal" />
-                <span className="text-[11px] uppercase tracking-widest font-bold">Instagram</span>
-              </a>
+            ))}
+            <div className="py-6">
+              <button onClick={openForm} className="btn-primary w-full group">
+                Iniciar un proyecto <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
             </div>
-          </div>
-        </section>
-      </main>
+          </motion.div>
+        </div>
+      </section>
 
-      <footer className="py-13 px-8 border-t border-noise/10 opacity-30 text-[9px] uppercase font-mono tracking-widest flex justify-between">
-        <div>© 3 LIBRAS studio // 2026</div>
-        <div className="hidden sm:block">Analysis / Synthesis / Resolution</div>
+      <footer className="bg-ink text-cream/60 border-t border-cream/10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 flex justify-between gap-4 label-mono text-[9px]">
+          <span>© 3 Libras Studio // 2026</span>
+          <span className="hidden sm:block">Analysis / Synthesis / Resolution</span>
+        </div>
       </footer>
     </div>
   );
