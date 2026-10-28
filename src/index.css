@@ -95,7 +95,56 @@
   animation: pulse-line 2.4s linear infinite;
 }
 
+/* Cursor personalizado: solo en dispositivos con mouse */
+@media (pointer: fine) {
+  html.has-custom-cursor,
+  html.has-custom-cursor * {
+    cursor: none !important;
+  }
+}
+
+/* Brillo dorado que recorre el "3" del logo */
+.logo-shimmer {
+  background: linear-gradient(110deg, var(--color-ink) 38%, #F0B266 48%, #FFF3D6 50%, #F0B266 52%, var(--color-ink) 62%);
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 5.5s cubic-bezier(0.65, 0, 0.35, 1) 1.8s infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  45%, 100% { background-position: 0% 0; }
+}
+
+/* Indicador de scroll del intro */
+.scroll-hint {
+  animation: scroll-hint 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+@keyframes scroll-hint {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(200%); }
+}
+
+.intro-spin {
+  animation: intro-spin 120s linear infinite;
+}
+@keyframes intro-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Subrayado que se dibuja en los links de la navbar */
+.nav-link {
+  background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 0 1px;
+  padding-bottom: 3px;
+  transition: background-size 0.4s cubic-bezier(0.22, 1, 0.36, 1), color 0.2s;
+}
+.nav-link:hover {
+  background-size: 100% 1px;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .synapse-node, .synapse-line { animation: none; }
+  .synapse-node, .synapse-line, .logo-shimmer, .scroll-hint, .intro-spin { animation: none; }
   html { scroll-behavior: auto; }
 }

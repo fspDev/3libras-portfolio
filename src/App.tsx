@@ -1,5 +1,5 @@
-import { useState, type ReactNode, type FormEvent } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useState, useEffect, useRef, type ReactNode, type FormEvent, type RefObject } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useVelocity } from 'motion/react';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -125,35 +125,348 @@ const SYNAPSE_LINKS: [number, number][] = [
  * COMPONENTS
  */
 
-const Logo = () => (
-  <a href="#top" className="flex items-center gap-3 text-ink">
-    <span className="font-display text-[22px] leading-none">3</span>
-    <span className="w-px h-5 bg-signal" />
-    <span className="font-display text-[11px] tracking-[0.35em] text-ink-soft">LIBRAS</span>
-  </a>
-);
+function useFinePointer() {
+  const [fine, setFine] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(pointer: fine)');
+    const update = () => setFine(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return fine;
+}
 
-const Navbar = ({ onContact }: { onContact: () => void }) => (
-  <header className="fixed top-0 inset-x-0 z-50 bg-paper/85 backdrop-blur-md border-b border-line/50">
-    <div className="max-w-6xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
-      <Logo />
-      <nav className="flex items-center gap-8">
-        <ul className="hidden md:flex items-center gap-8">
-          {NAV.map((n) => (
-            <li key={n.href}>
-              <a href={n.href} className="uppercase text-[11px] tracking-[0.18em] text-ink hover:text-signal transition-colors">
-                {n.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-        <button onClick={onContact} className="border border-ink/60 px-4 py-2 uppercase text-[11px] tracking-[0.18em] font-semibold hover:bg-ink hover:text-cream transition-colors">
-          Hablemos
-        </button>
-      </nav>
+/**
+ * Cursor: punto instantáneo + anillo con resorte que se estira según la velocidad,
+ * unidos por un filamento (la "sinapsis"). Reacciona a links y a [data-cursor="Etiqueta"].
+ */
+const CustomCursor = () => {
+  const x = useMotionValue(-100);
+  const y = useMotionValue(-100);
+  const ringX = useSpring(x, { stiffness: 380, damping: 30, mass: 0.6 });
+  const ringY = useSpring(y, { stiffness: 380, damping: 30, mass: 0.6 });
+  const vx = useVelocity(ringX);
+  const vy = useVelocity(ringY);
+  const stretch = useTransform(() => Math.min(Math.hypot(vx.get(), vy.get()) / 2600, 0.5));
+  const scaleX = useTransform(stretch, (s) => 1 + s);
+  const scaleY = useTransform(stretch, (s) => 1 - s * 0.55);
+  const rotate = useTransform(() => (Math.atan2(vy.get(), vx.get()) * 180) / Math.PI);
+  const filament = useTransform(stretch, [0, 0.08, 0.5], [0, 0.35, 0.9]);
+
+  const [mode, setMode] = useState<'idle' | 'hover' | 'label'>('idle');
+  const [label, setLabel] = useState('');
+  const [pressed, setPressed] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.add('has-custom-cursor');
+    const move = (e: PointerEvent) => { x.set(e.clientX); y.set(e.clientY); setVisible(true); };
+    const over = (e: PointerEvent) => {
+      const el = e.target as HTMLElement;
+      const labelled = el.closest<HTMLElement>('[data-cursor]');
+      if (labelled) { setMode('label'); setLabel(labelled.dataset.cursor ?? ''); }
+      else setMode(el.closest('a, button, input, textarea, label') ? 'hover' : 'idle');
+    };
+    const down = () => setPressed(true);
+    const up = () => setPressed(false);
+    const leave = () => setVisible(false);
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerover', over);
+    window.addEventListener('pointerdown', down);
+    window.addEventListener('pointerup', up);
+    document.documentElement.addEventListener('pointerleave', leave);
+    return () => {
+      document.documentElement.classList.remove('has-custom-cursor');
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerover', over);
+      window.removeEventListener('pointerdown', down);
+      window.removeEventListener('pointerup', up);
+      document.documentElement.removeEventListener('pointerleave', leave);
+    };
+  }, [x, y]);
+
+  const size = mode === 'label' ? 86 : mode === 'hover' ? 54 : 30;
+  const fill = mode === 'label' ? 'rgba(200,119,42,0.94)' : mode === 'hover' ? 'rgba(200,119,42,0.14)' : 'rgba(200,119,42,0)';
+
+  return (
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[9999] transition-opacity duration-300" style={{ opacity: visible ? 1 : 0 }}>
+      <svg className="absolute inset-0 w-full h-full overflow-visible">
+        <motion.line x1={x} y1={y} x2={ringX} y2={ringY} stroke="#C8772A" strokeWidth="1" strokeLinecap="round" style={{ opacity: filament }} />
+      </svg>
+      <motion.div className="absolute top-0 left-0 w-0 h-0 flex items-center justify-center" style={{ x: ringX, y: ringY }}>
+        <motion.div className="flex items-center justify-center" style={{ rotate, scaleX, scaleY }}>
+          <motion.div
+            className="flex-none rounded-full border border-signal"
+            animate={{ width: size, height: size, backgroundColor: fill, scale: pressed ? 0.78 : 1 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+          />
+        </motion.div>
+        <AnimatePresence>
+          {mode === 'label' && (
+            <motion.span
+              key={label}
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.5 }}
+              className="absolute font-mono uppercase text-[10px] tracking-[0.18em] text-cream whitespace-nowrap"
+            >
+              {label}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.div>
+      <motion.div className="absolute top-0 left-0 w-0 h-0 flex items-center justify-center" style={{ x, y }}>
+        <motion.span
+          className="block flex-none rounded-full bg-signal"
+          animate={{ width: mode === 'idle' ? 6 : 0, height: mode === 'idle' ? 6 : 0 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        />
+      </motion.div>
     </div>
-  </header>
-);
+  );
+};
+
+// Botón "magnético": se desplaza levemente hacia el puntero
+const Magnetic = ({ children, strength = 0.3 }: { children: ReactNode; strength?: number }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const mx = useSpring(0, { stiffness: 220, damping: 14, mass: 0.4 });
+  const my = useSpring(0, { stiffness: 220, damping: 14, mass: 0.4 });
+  return (
+    <motion.div
+      ref={ref}
+      className="inline-flex"
+      style={{ x: mx, y: my }}
+      onPointerMove={(e) => {
+        if (e.pointerType !== 'mouse' || !ref.current) return;
+        const r = ref.current.getBoundingClientRect();
+        mx.set((e.clientX - (r.left + r.width / 2)) * strength);
+        my.set((e.clientY - (r.top + r.height / 2)) * strength);
+      }}
+      onPointerLeave={() => { mx.set(0); my.set(0); }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+/**
+ * LOGO QUE SE TRANSFORMA
+ * Arranca grande y apilado en el centro del intro (3 / regla / LIBRAS) y, con el scroll,
+ * vuela al hueco de la navbar: la regla gira 90° hasta quedar como separador "3 | LIBRAS".
+ */
+const BIG_3 = 200;
+const BIG_LIBRAS = 34;
+const SMALL_3 = 22;
+const SMALL_LIBRAS = 11;
+const LOGO_GAP = 12;
+const LIBRAS = 'LIBRAS'.split('');
+
+type LogoGeo = { w3: number; wL: number; hL: number; vw: number; vh: number; tx: number; ty: number };
+
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+const TransformingLogo = ({ slotRef, onSlotWidth }: { slotRef: RefObject<HTMLAnchorElement | null>; onSlotWidth: (w: number) => void }) => {
+  const threeRef = useRef<HTMLSpanElement>(null);
+  const librasRef = useRef<HTMLSpanElement>(null);
+  const geo = useRef<LogoGeo | null>(null);
+
+  const { scrollY } = useScroll();
+  const raw = useTransform(scrollY, (v) => Math.min(Math.max(v / (window.innerHeight * 0.7), 0), 1));
+  const progress = useSpring(raw, { stiffness: 90, damping: 20, mass: 0.7 });
+  const px = useSpring(0, { stiffness: 60, damping: 18 });
+  const py = useSpring(0, { stiffness: 60, damping: 18 });
+
+  const tX = useMotionValue(0), tY = useMotionValue(0), tS = useMotionValue(1);
+  const rX = useMotionValue(0), rY = useMotionValue(0), rW = useMotionValue(0), rH = useMotionValue(2), rR = useMotionValue(0);
+  const lX = useMotionValue(0), lY = useMotionValue(0), lS = useMotionValue(1);
+  const glow = useTransform(progress, [0, 0.6], [1, 0]);
+  const glowShadow = useTransform(glow, (gl) => `0 0 ${18 * gl}px ${3 * gl}px rgba(200,119,42,${0.55 * gl})`);
+  const [ready, setReady] = useState(false);
+
+  const apply = () => {
+    const g = geo.current;
+    if (!g) return;
+    const p = progress.get();
+    const fit = Math.min(1, (g.vw - 48) / Math.max(g.w3, g.wL));
+    const s3s = SMALL_3 / BIG_3, sLs = SMALL_LIBRAS / BIG_LIBRAS;
+
+    // Estado grande (apilado y centrado), con paralaje del puntero en distintas profundidades
+    const h3 = BIG_3 * fit, hL = g.hL * fit, gapA = 20 * fit, gapB = 22 * fit;
+    const top = g.vh / 2 - (h3 + gapA + 2 + gapB + hL) / 2;
+    const cx = g.vw / 2;
+    const par = 1 - p, ox = px.get() * par, oy = py.get() * par;
+    const big = {
+      t: { x: cx - (g.w3 * fit) / 2 + ox * 22, y: top + oy * 16 },
+      r: { cx: cx + ox * 12, cy: top + h3 + gapA + 1 + oy * 9, len: g.wL * fit * 0.618, th: 2 },
+      l: { x: cx - (g.wL * fit) / 2 + ox * 7, y: top + h3 + gapA + 2 + gapB + oy * 5 },
+    };
+    // Estado chico (en línea dentro de la navbar)
+    const ruleX = g.tx + g.w3 * s3s + LOGO_GAP;
+    const small = {
+      t: { x: g.tx, y: g.ty - SMALL_3 / 2 },
+      r: { cx: ruleX + 0.5, cy: g.ty, len: 20, th: 1 },
+      l: { x: ruleX + 1 + LOGO_GAP, y: g.ty - (g.hL * sLs) / 2 },
+    };
+
+    tX.set(lerp(big.t.x, small.t.x, p)); tY.set(lerp(big.t.y, small.t.y, p)); tS.set(lerp(fit, s3s, p));
+    const len = lerp(big.r.len, small.r.len, p), th = lerp(big.r.th, small.r.th, p);
+    rW.set(len); rH.set(th);
+    rX.set(lerp(big.r.cx, small.r.cx, p) - len / 2); rY.set(lerp(big.r.cy, small.r.cy, p) - th / 2);
+    rR.set(90 * p);
+    lX.set(lerp(big.l.x, small.l.x, p)); lY.set(lerp(big.l.y, small.l.y, p)); lS.set(lerp(fit, sLs, p));
+  };
+
+  useEffect(() => {
+    let raf = 0;
+    const measure = () => {
+      if (!threeRef.current || !librasRef.current) return;
+      const w3 = threeRef.current.offsetWidth;
+      const wL = librasRef.current.offsetWidth;
+      const hL = librasRef.current.offsetHeight;
+      onSlotWidth(Math.ceil(w3 * (SMALL_3 / BIG_3) + LOGO_GAP * 2 + 1 + wL * (SMALL_LIBRAS / BIG_LIBRAS)));
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const slot = slotRef.current?.getBoundingClientRect();
+        geo.current = {
+          w3, wL, hL,
+          vw: window.innerWidth, vh: window.innerHeight,
+          tx: slot?.left ?? 16, ty: slot ? slot.top + slot.height / 2 : 32,
+        };
+        apply();
+        setReady(true);
+      });
+    };
+    measure();
+    document.fonts?.ready.then(measure);
+    window.addEventListener('resize', measure);
+    const unsub = [progress.on('change', apply), px.on('change', apply), py.on('change', apply)];
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse') return;
+      px.set(e.clientX / window.innerWidth - 0.5);
+      py.set(e.clientY / window.innerHeight - 0.5);
+    };
+    window.addEventListener('pointermove', onMove);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', measure);
+      window.removeEventListener('pointermove', onMove);
+      unsub.forEach((u) => u());
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div aria-hidden="true" className="fixed inset-0 z-[60] pointer-events-none" style={{ visibility: ready ? 'visible' : 'hidden' }}>
+      <motion.div className="absolute top-0 left-0 origin-top-left" style={{ x: tX, y: tY, scale: tS }}>
+        <motion.span
+          ref={threeRef}
+          className="logo-shimmer block font-display leading-none select-none"
+          style={{ fontSize: BIG_3 }}
+          initial={{ opacity: 0, y: 40, filter: 'blur(18px)' }}
+          animate={ready ? { opacity: 1, y: 0, filter: 'blur(0px)' } : undefined}
+          transition={{ duration: 1.3, ease: [0.22, 1, 0.36, 1] }}
+        >
+          3
+        </motion.span>
+      </motion.div>
+
+      <motion.div className="absolute top-0 left-0" style={{ x: rX, y: rY, width: rW, height: rH, rotate: rR }}>
+        <motion.div
+          className="w-full h-full bg-signal"
+          style={{ boxShadow: glowShadow }}
+          initial={{ scaleX: 0 }}
+          animate={ready ? { scaleX: 1 } : undefined}
+          transition={{ duration: 1.1, delay: 0.45, ease: [0.65, 0, 0.35, 1] }}
+        />
+      </motion.div>
+
+      <motion.div className="absolute top-0 left-0 origin-top-left" style={{ x: lX, y: lY, scale: lS }}>
+        <span ref={librasRef} className="flex font-display leading-none whitespace-nowrap text-ink-soft" style={{ fontSize: BIG_LIBRAS }}>
+          {LIBRAS.map((ch, i) => (
+            <motion.span
+              key={i}
+              className="inline-block"
+              style={{ paddingRight: i < LIBRAS.length - 1 ? '0.35em' : 0 }}
+              initial={{ opacity: 0, y: '0.7em', rotateX: -80 }}
+              animate={ready ? { opacity: 1, y: 0, rotateX: 0 } : undefined}
+              transition={{ duration: 0.8, delay: 0.75 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {ch}
+            </motion.span>
+          ))}
+        </span>
+      </motion.div>
+    </div>
+  );
+};
+
+// Pantalla de entrada: espiral de círculos áureos que se dibuja detrás del logo
+const GOLDEN_RADII = [377, 233, 144, 89, 55, 34, 21];
+
+const Intro = () => {
+  const { scrollY } = useScroll();
+  const fade = useTransform(scrollY, [0, 450], [1, 0]);
+  const spin = useTransform(scrollY, [0, 900], [0, 70]);
+  return (
+    <section className="sketch-bg relative h-[100svh] overflow-hidden" style={{ ['--sketch-tint' as string]: 'rgba(243, 218, 162, 0.78)' }}>
+      <motion.div className="absolute inset-0 flex items-center justify-center" style={{ opacity: fade, rotate: spin }}>
+        <svg viewBox="0 0 1000 1000" className="w-[150vmax] h-[150vmax] max-w-none text-signal intro-spin" aria-hidden="true">
+          {GOLDEN_RADII.map((r, i) => (
+            <motion.circle
+              key={r}
+              cx={877 - r} cy={500} r={r}
+              fill="none" stroke="currentColor"
+              strokeWidth={1.1 - i * 0.12}
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 0.55 }}
+              transition={{ duration: 2.2, delay: 0.2 + i * 0.18, ease: [0.65, 0, 0.35, 1] }}
+            />
+          ))}
+          <motion.line x1="123" y1="500" x2="877" y2="500" stroke="currentColor" strokeWidth="0.4" strokeDasharray="4 6"
+            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 2.4, delay: 0.6 }} />
+        </svg>
+      </motion.div>
+
+      <motion.div style={{ opacity: fade }} className="absolute bottom-8 inset-x-0 flex flex-col items-center gap-3 label-mono text-ink-soft">
+        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }}>Estudio de diseño y desarrollo · Ø 1.618</motion.span>
+        <span className="relative block w-px h-12 overflow-hidden bg-ink/15">
+          <span className="scroll-hint absolute inset-x-0 top-0 h-1/2 bg-signal" />
+        </span>
+      </motion.div>
+    </section>
+  );
+};
+
+const Navbar = ({ onContact, slotRef, slotWidth }: { onContact: () => void; slotRef: RefObject<HTMLAnchorElement | null>; slotWidth: number }) => {
+  const { scrollY } = useScroll();
+  const bar = useTransform(scrollY, (v) => Math.min(Math.max((v - window.innerHeight * 0.35) / (window.innerHeight * 0.35), 0), 1));
+  return (
+    <header className="fixed top-0 inset-x-0 z-50">
+      <motion.div className="absolute inset-0 bg-paper/85 backdrop-blur-md border-b border-line/50" style={{ opacity: bar }} />
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
+        {/* Hueco donde aterriza el logo animado (el logo real es decorativo y no recibe clics) */}
+        <a ref={slotRef} href="#top" aria-label="3 Libras — inicio" className="block h-6" style={{ width: slotWidth }} />
+        <nav className="flex items-center gap-8">
+          <ul className="hidden md:flex items-center gap-8">
+            {NAV.map((n) => (
+              <li key={n.href}>
+                <a href={n.href} className="nav-link uppercase text-[11px] tracking-[0.18em] text-ink hover:text-signal transition-colors">
+                  {n.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <Magnetic>
+            <button onClick={onContact} className="border border-ink/60 px-4 py-2 uppercase text-[11px] tracking-[0.18em] font-semibold hover:bg-ink hover:text-cream transition-colors">
+              Hablemos
+            </button>
+          </Magnetic>
+        </nav>
+      </div>
+    </header>
+  );
+};
 
 const SynapticBrain = () => (
   <div className="relative w-full aspect-[3/2] scale-[1.12] origin-center">
@@ -371,10 +684,16 @@ export default function App() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<typeof SERVICES[0] | null>(null);
   const openForm = () => setIsFormOpen(true);
+  const finePointer = useFinePointer();
+  const logoSlot = useRef<HTMLAnchorElement>(null);
+  const [slotWidth, setSlotWidth] = useState(120);
 
   return (
     <div id="top" className="min-h-screen bg-paper text-ink font-sans overflow-x-hidden">
-      <Navbar onContact={openForm} />
+      {finePointer && <CustomCursor />}
+      <Navbar onContact={openForm} slotRef={logoSlot} slotWidth={slotWidth} />
+      <TransformingLogo slotRef={logoSlot} onSlotWidth={setSlotWidth} />
+      <Intro />
 
       <AnimatePresence>
         {isFormOpen && <ContactForm onClose={() => setIsFormOpen(false)} />}
@@ -384,7 +703,7 @@ export default function App() {
       {/* HERO */}
       <section className="sketch-bg pt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-16 lg:pt-20 pb-10 grid lg:grid-cols-[1fr_1.35fr] gap-8 items-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
+          <motion.div {...reveal}>
             <p className="label-mono text-ink-soft flex items-center gap-3">
               <span className="whitespace-nowrap">Ø 1.618</span> <span className="w-10 h-px shrink-0 bg-ink-soft/60" /> Estudio de diseño y desarrollo
             </p>
@@ -396,15 +715,19 @@ export default function App() {
               Pensamos como una red neuronal y construimos como una ecuación: conectamos ideas, datos e intuición, y les damos la forma exacta para resolver lo que tu proyecto necesita.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <button onClick={openForm} className="btn-primary group">
-                Iniciar un proyecto <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <a href="#metodo" className="btn-ghost">Ver el método</a>
+              <Magnetic>
+                <button onClick={openForm} className="btn-primary group">
+                  Iniciar un proyecto <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </Magnetic>
+              <Magnetic>
+                <a href="#metodo" className="btn-ghost">Ver el método</a>
+              </Magnetic>
             </div>
             <p className="mt-8 label-mono text-ink-soft">Diseño web — Desarrollo app — Identidad visual</p>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.2, delay: 0.2 }}>
+          <motion.div initial={{ opacity: 0, scale: 0.96 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 1.2, delay: 0.2 }}>
             <SynapticBrain />
           </motion.div>
         </div>
@@ -431,6 +754,7 @@ export default function App() {
                 {...reveal}
                 transition={{ ...reveal.transition, delay: i * 0.1 }}
                 onClick={() => setSelectedService(s)}
+                data-cursor="Abrir"
                 className={`group flex flex-col justify-start text-left bg-card/90 border border-line/80 p-6 sm:p-7 hover:border-signal hover:bg-cream/80 transition-colors ${i === 0 ? 'md:row-span-2' : ''}`}
               >
                 <div className="flex justify-between items-start">
@@ -499,7 +823,7 @@ export default function App() {
           <ul className="mt-12 border-t border-line">
             {PROJECTS.map((p, i) => (
               <motion.li key={p.id} {...reveal} className="border-b border-line">
-                <a href={p.url} target="_blank" rel="noopener noreferrer" className="group grid sm:grid-cols-[1fr_1.618fr] gap-6 sm:gap-10 py-6 items-center">
+                <a href={p.url} target="_blank" rel="noopener noreferrer" data-cursor="Ver ↗" className="group grid sm:grid-cols-[1fr_1.618fr] gap-6 sm:gap-10 py-6 items-center">
                   <div className="relative aspect-[1.618/1] overflow-hidden border border-line bg-card">
                     <img
                       src={p.img}
