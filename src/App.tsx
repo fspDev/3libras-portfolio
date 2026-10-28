@@ -209,7 +209,7 @@ const CustomCursor = () => {
               initial={{ opacity: 0, scale: 0.5 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.5 }}
-              className="absolute font-mono uppercase text-[10px] tracking-[0.18em] text-cream whitespace-nowrap"
+              className="absolute font-mono uppercase text-[11px] tracking-[0.18em] text-cream whitespace-nowrap"
             >
               {label}
             </motion.span>
@@ -266,14 +266,21 @@ type LogoGeo = { w3: number; wL: number; hL: number; vw: number; vh: number; tx:
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
+// Progreso del vuelo del logo (0 = intro, 1 = en la navbar); mismo resorte en logo y navbar
+function useLogoProgress() {
+  const { scrollY } = useScroll();
+  const raw = useTransform(scrollY, (v) => Math.min(Math.max(v / (window.innerHeight * 0.7), 0), 1));
+  return useSpring(raw, { stiffness: 90, damping: 20, mass: 0.7 });
+}
+
 const TransformingLogo = ({ slotRef, onSlotWidth }: { slotRef: RefObject<HTMLAnchorElement | null>; onSlotWidth: (w: number) => void }) => {
   const threeRef = useRef<HTMLSpanElement>(null);
   const librasRef = useRef<HTMLSpanElement>(null);
   const geo = useRef<LogoGeo | null>(null);
 
-  const { scrollY } = useScroll();
-  const raw = useTransform(scrollY, (v) => Math.min(Math.max(v / (window.innerHeight * 0.7), 0), 1));
-  const progress = useSpring(raw, { stiffness: 90, damping: 20, mass: 0.7 });
+  const progress = useLogoProgress();
+  // Al aterrizar se cede el lugar al logo nítido de la navbar (el escalado se ve borroso en Windows)
+  const flyingOpacity = useTransform(progress, [0.96, 0.995], [1, 0]);
   const px = useSpring(0, { stiffness: 60, damping: 18 });
   const py = useSpring(0, { stiffness: 60, damping: 18 });
 
@@ -357,7 +364,7 @@ const TransformingLogo = ({ slotRef, onSlotWidth }: { slotRef: RefObject<HTMLAnc
   }, []);
 
   return (
-    <div aria-hidden="true" className="fixed inset-0 z-[60] pointer-events-none" style={{ visibility: ready ? 'visible' : 'hidden' }}>
+    <motion.div aria-hidden="true" className="fixed inset-0 z-[60] pointer-events-none" style={{ visibility: ready ? 'visible' : 'hidden', opacity: flyingOpacity }}>
       <motion.div className="absolute top-0 left-0 origin-top-left" style={{ x: tX, y: tY, scale: tS }}>
         <motion.span
           ref={threeRef}
@@ -397,7 +404,7 @@ const TransformingLogo = ({ slotRef, onSlotWidth }: { slotRef: RefObject<HTMLAnc
           ))}
         </span>
       </motion.div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -441,24 +448,35 @@ const Intro = () => {
 const Navbar = ({ onContact, slotRef, slotWidth }: { onContact: () => void; slotRef: RefObject<HTMLAnchorElement | null>; slotWidth: number }) => {
   const { scrollY } = useScroll();
   const bar = useTransform(scrollY, (v) => Math.min(Math.max((v - window.innerHeight * 0.35) / (window.innerHeight * 0.35), 0), 1));
+  const landed = useTransform(useLogoProgress(), [0.96, 0.995], [0, 1]);
   return (
     <header className="fixed top-0 inset-x-0 z-50">
       <motion.div className="absolute inset-0 bg-paper/85 backdrop-blur-md border-b border-line/50" style={{ opacity: bar }} />
       <div className="relative max-w-6xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
-        {/* Hueco donde aterriza el logo animado (el logo real es decorativo y no recibe clics) */}
-        <a ref={slotRef} href="#top" aria-label="3 Libras — inicio" className="block h-6" style={{ width: slotWidth }} />
+        {/* Hueco donde aterriza el logo animado; al llegar se muestra esta versión nítida a tamaño real */}
+        <a ref={slotRef} href="#top" aria-label="3 Libras — inicio" className="block h-6" style={{ width: slotWidth }}>
+          <motion.span aria-hidden="true" className="flex items-center h-full" style={{ opacity: landed, gap: LOGO_GAP }}>
+            <span className="logo-shimmer font-display leading-none" style={{ fontSize: SMALL_3 }}>3</span>
+            <span className="w-px h-5 bg-signal flex-none" />
+            <span className="flex font-display leading-none whitespace-nowrap text-ink-soft" style={{ fontSize: SMALL_LIBRAS }}>
+              {LIBRAS.map((ch, i) => (
+                <span key={i} style={{ paddingRight: i < LIBRAS.length - 1 ? '0.35em' : 0 }}>{ch}</span>
+              ))}
+            </span>
+          </motion.span>
+        </a>
         <nav className="flex items-center gap-8">
           <ul className="hidden md:flex items-center gap-8">
             {NAV.map((n) => (
               <li key={n.href}>
-                <a href={n.href} className="nav-link uppercase text-[11px] tracking-[0.18em] text-ink hover:text-signal transition-colors">
+                <a href={n.href} className="nav-link uppercase text-[12px] tracking-[0.18em] text-ink hover:text-signal transition-colors">
                   {n.label}
                 </a>
               </li>
             ))}
           </ul>
           <Magnetic>
-            <button onClick={onContact} className="border border-ink/60 px-4 py-2 uppercase text-[11px] tracking-[0.18em] font-semibold hover:bg-ink hover:text-cream transition-colors">
+            <button onClick={onContact} className="border border-ink/60 px-4 py-2 uppercase text-[12px] tracking-[0.18em] font-semibold hover:bg-ink hover:text-cream transition-colors">
               Hablemos
             </button>
           </Magnetic>
@@ -517,7 +535,7 @@ const FibonacciRuler = () => (
 
 const SectionHeader = ({ prefix, label, title, light = false }: { prefix: string; label: string; title: ReactNode; light?: boolean }) => (
   <div>
-    <div className={`eyebrow ${light ? 'text-cream/70' : 'text-ink-soft'}`}>
+    <div className={`eyebrow ${light ? 'text-cream/85' : 'text-ink-soft'}`}>
       <span>{prefix}</span>
       <span>{label}</span>
     </div>
@@ -556,7 +574,7 @@ const GoldenDiagram = () => (
       <text x="333" y="296" textAnchor="middle" fontSize="11" fill="#5A4632" className="font-mono">b</text>
     </svg>
     <figcaption className="mt-4">
-      <p className="font-mono text-[13px] text-ink">(a + b) / a = a / b = <span className="text-signal">φ</span></p>
+      <p className="font-mono text-[15px] text-ink">(a + b) / a = a / b = <span className="text-signal">φ</span></p>
       <p className="label-mono text-ink-soft mt-1">La proporción que ordena la intuición.</p>
     </figcaption>
   </figure>
@@ -591,7 +609,7 @@ const ServiceDetail = ({ service, onClose }: { service: typeof SERVICES[0]; onCl
       <div>
         <span className="label-mono text-signal">Protocolo // {service.id}</span>
         <h3 className="text-[34px] leading-none mt-3 mb-6">{service.name}</h3>
-        <p className="text-sm leading-relaxed text-ink-soft">{service.desc}</p>
+        <p className="text-[15px] leading-relaxed text-ink-soft">{service.desc}</p>
         <service.icon className="w-12 h-12 text-signal opacity-40 mt-8" strokeWidth={1.25} />
       </div>
       <div className="md:col-span-2 space-y-5">
@@ -603,10 +621,10 @@ const ServiceDetail = ({ service, onClose }: { service: typeof SERVICES[0]; onCl
             transition={{ delay: i * 0.08 }}
             className="group flex items-start gap-6 border-l border-line pl-6 py-2 hover:border-signal transition-colors"
           >
-            <span className="font-mono text-[11px] text-signal pt-1">{p.step}</span>
+            <span className="font-mono text-[12px] text-signal pt-1">{p.step}</span>
             <div>
-              <h4 className="uppercase text-[13px] tracking-[0.18em] font-semibold mb-1 group-hover:text-signal transition-colors">{p.title}</h4>
-              <p className="text-[13px] text-ink-soft leading-relaxed">{p.desc}</p>
+              <h4 className="uppercase text-[15px] tracking-[0.18em] font-semibold mb-1 group-hover:text-signal transition-colors">{p.title}</h4>
+              <p className="text-[15px] text-ink-soft leading-relaxed">{p.desc}</p>
             </div>
           </motion.div>
         ))}
@@ -709,9 +727,9 @@ export default function App() {
             </p>
             <h1 className="mt-6 text-[44px] sm:text-[56px] leading-[1.05] tracking-[-0.03em]">
               Creatividad<br />que conecta.<br />
-              <span className="text-ember font-normal">Soluciones en<br />proporción.</span>
+              <span className="text-ember font-medium">Soluciones en<br />proporción.</span>
             </h1>
-            <p className="mt-6 max-w-md text-[15px] leading-relaxed text-ink">
+            <p className="mt-6 max-w-md text-[17px] leading-relaxed text-ink">
               Pensamos como una red neuronal y construimos como una ecuación: conectamos ideas, datos e intuición, y les damos la forma exacta para resolver lo que tu proyecto necesita.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -740,7 +758,7 @@ export default function App() {
       <FibonacciRuler />
 
       {/* 01 CAPACIDADES */}
-      <section id="capacidades" className="sketch-bg py-20 sm:py-24 scroll-mt-16" style={{ ['--sketch-tint' as string]: 'rgba(243, 218, 162, 0.72)' }}>
+      <section id="capacidades" className="sketch-bg py-20 sm:py-24 scroll-mt-16" style={{ ['--sketch-tint' as string]: 'rgba(243, 218, 162, 0.84)' }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-8">
           <motion.div {...reveal} className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <SectionHeader prefix="01" label="Capacidades" title={<>Tres disciplinas, un mismo<br className="hidden sm:block" /> sistema de pensamiento.</>} />
@@ -759,11 +777,11 @@ export default function App() {
               >
                 <div className="flex justify-between items-start">
                   <s.icon className="w-6 h-6 text-signal" strokeWidth={1.25} />
-                  <span className="font-mono text-[10px] text-ink-soft">{s.ratio}</span>
+                  <span className="font-mono text-[11px] text-ink-soft">{s.ratio}</span>
                 </div>
-                <h3 className="mt-5 uppercase text-[12px] tracking-[0.22em] font-semibold">{s.name}</h3>
-                <p className={`mt-3 ${i === 0 ? 'text-[20px]' : 'text-[17px]'} font-light`}>{s.tagline}</p>
-                <p className="mt-4 text-[13px] leading-relaxed text-ink-soft max-w-md">{s.desc}</p>
+                <h3 className="mt-5 uppercase text-[13px] tracking-[0.22em] font-semibold">{s.name}</h3>
+                <p className={`mt-3 ${i === 0 ? 'text-[20px]' : 'text-[17px]'} font-normal`}>{s.tagline}</p>
+                <p className="mt-4 text-[15px] leading-relaxed text-ink-soft max-w-md">{s.desc}</p>
                 {s.tags.length > 0 && (
                   <div className="mt-5 flex flex-wrap gap-2">
                     {s.tags.map((t) => <span key={t} className="chip">{t}</span>)}
@@ -788,7 +806,7 @@ export default function App() {
               label="Método"
               title={<>Pensar como una red.<br /><span className="text-[#E9A866]">Resolver como una ecuación.</span></>}
             />
-            <p className="text-[14px] leading-relaxed text-cream/75">
+            <p className="text-[16px] leading-relaxed text-cream/85">
               La creatividad no es un destello aislado: es una conexión nueva entre ideas que ya existían. Nuestro proceso multiplica esas conexiones y después las ordena con proporción, hasta que la solución encaja.
             </p>
           </motion.div>
@@ -804,9 +822,9 @@ export default function App() {
                   </span>
                   <span className="h-px flex-1 bg-signal/50" />
                 </div>
-                <p className="mt-5 font-mono text-[11px] text-cream/50">{m.mult}</p>
+                <p className="mt-5 font-mono text-[12px] text-cream/70">{m.mult}</p>
                 <h3 className="mt-2 text-[22px] font-normal">{m.title}</h3>
-                <p className="mt-3 text-[13px] leading-relaxed text-cream/70">{m.desc}</p>
+                <p className="mt-3 text-[15px] leading-relaxed text-cream/85">{m.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -836,14 +854,14 @@ export default function App() {
                     <span className="absolute left-2 bottom-2 bg-ink text-cream label-mono px-2 py-1">[Captura · {p.title}]</span>
                   </div>
                   <div>
-                    <div className="flex justify-between font-mono text-[10px] text-ink-soft">
+                    <div className="flex justify-between font-mono text-[11px] text-ink-soft">
                       <span>{String(i + 1).padStart(2, '0')}</span>
                       <span>{p.year}</span>
                     </div>
                     <h3 className="mt-2 text-[30px] sm:text-[36px] uppercase font-normal tracking-[-0.01em] group-hover:text-signal transition-colors">{p.title}</h3>
                     <p className="mt-1 label-mono text-signal">{p.category} // {p.tech.join(', ')}</p>
-                    <p className="mt-3 text-[14px] leading-relaxed max-w-lg">{p.desc}</p>
-                    <span className="mt-4 inline-flex items-center gap-2 uppercase text-[10px] tracking-[0.18em] font-semibold">
+                    <p className="mt-3 text-[16px] leading-relaxed max-w-lg">{p.desc}</p>
+                    <span className="mt-4 inline-flex items-center gap-2 uppercase text-[11px] tracking-[0.18em] font-semibold">
                       Ver proyecto <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                     </span>
                   </div>
@@ -855,11 +873,11 @@ export default function App() {
       </section>
 
       {/* 04 FILOSOFÍA */}
-      <section id="filosofia" className="sketch-bg py-20 sm:py-28 scroll-mt-16" style={{ ['--sketch-tint' as string]: 'rgba(232, 200, 140, 0.45)' }}>
+      <section id="filosofia" className="sketch-bg py-20 sm:py-28 scroll-mt-16" style={{ ['--sketch-tint' as string]: 'rgba(236, 206, 148, 0.72)' }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-8 grid lg:grid-cols-[1.35fr_1fr] gap-12 items-center">
           <motion.div {...reveal}>
-            <SectionHeader prefix="04" label="Filosofía" title={<>La precisión es la<br />única <span className="text-ember font-normal">estética honesta.</span></>} />
-            <div className="mt-8 bg-card/90 border border-line/80 p-6 grid sm:grid-cols-2 gap-6 text-[13px] leading-relaxed">
+            <SectionHeader prefix="04" label="Filosofía" title={<>La precisión es la<br />única <span className="text-ember font-medium">estética honesta.</span></>} />
+            <div className="mt-8 bg-card/90 border border-line/80 p-6 grid sm:grid-cols-2 gap-6 text-[15px] leading-relaxed">
               <p>Descomponemos problemas complejos en axiomas geométricos. El diseño no es arte; es la resolución visual de una ecuación de datos.</p>
               <p>Cada pixel en 3 Libras responde a una intención técnica. Respetamos la arquitectura del pensamiento para construir interfaces que funcionen como extensiones de la mente.</p>
             </div>
@@ -874,11 +892,11 @@ export default function App() {
       <section id="contacto" className="bg-ink text-cream pt-20 sm:pt-24 pb-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-8 grid lg:grid-cols-[1.618fr_1fr] gap-12 items-start">
           <motion.div {...reveal}>
-            <div className="eyebrow text-cream/70"><span>05</span><span>Punto de sincronización</span></div>
-            <h2 className="mt-6 text-[64px] sm:text-[88px] leading-[0.95] font-extralight tracking-[-0.03em] text-cream">
-              Hablemos<br />del <span className="text-[#E9A866] font-light">objeto.</span>
+            <div className="eyebrow text-cream/85"><span>05</span><span>Punto de sincronización</span></div>
+            <h2 className="mt-6 text-[64px] sm:text-[88px] leading-[0.95] font-light tracking-[-0.03em] text-cream">
+              Hablemos<br />del <span className="text-[#E9A866] font-normal">objeto.</span>
             </h2>
-            <p className="mt-6 max-w-sm text-[14px] leading-relaxed text-cream/75">
+            <p className="mt-6 max-w-sm text-[16px] leading-relaxed text-cream/85">
               Contanos qué querés resolver. Nosotros buscamos la conexión que falta.
             </p>
           </motion.div>
@@ -890,7 +908,7 @@ export default function App() {
             ].map((c) => (
               <a key={c.label} href={c.href} target="_blank" rel="noopener noreferrer" className="group flex items-center justify-between py-4 border-b border-cream/15 hover:text-[#E9A866] transition-colors">
                 <span>
-                  <span className="block label-mono text-cream/50 text-[9px]">{c.k}</span>
+                  <span className="block label-mono text-cream/70 text-[11px]">{c.k}</span>
                   <span className="block text-[18px] mt-0.5">{c.label}</span>
                 </span>
                 <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -905,8 +923,8 @@ export default function App() {
         </div>
       </section>
 
-      <footer className="bg-ink text-cream/60 border-t border-cream/10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 flex justify-between gap-4 label-mono text-[9px]">
+      <footer className="bg-ink text-cream/75 border-t border-cream/10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 flex justify-between gap-4 label-mono text-[11px]">
           <span>© 3 Libras Studio // 2026</span>
           <span className="hidden sm:block">Analysis / Synthesis / Resolution</span>
         </div>

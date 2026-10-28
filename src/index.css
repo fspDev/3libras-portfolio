@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Syncopate:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500&family=Syncopate:wght@400;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -6,8 +6,8 @@
   --color-paper: #F3DAA2;
   --color-paper-2: #EFD296;
   --color-card: #F2D9A0;
-  --color-ink: #5A4632;
-  --color-ink-soft: #7A6347;
+  --color-ink: #45331F;
+  --color-ink-soft: #634C34;
   --color-signal: #C8772A;
   --color-ember: #8E4B1C;
   --color-cream: #F6E3B8;
@@ -35,7 +35,7 @@
   }
 
   h1, h2, h3, h4 {
-    font-weight: 300;
+    font-weight: 400;
     letter-spacing: -0.02em;
   }
 }
@@ -43,33 +43,33 @@
 @layer components {
   /* Etiqueta mono pequeña: "Ø 1.618 —— ESTUDIO..." */
   .label-mono {
-    @apply font-mono uppercase text-[10px] tracking-[0.18em];
+    @apply font-mono uppercase text-[11px] tracking-[0.14em];
   }
 
   /* Encabezado de sección: "01 CAPACIDADES" */
   .eyebrow {
-    @apply flex items-center gap-3 uppercase text-[11px] tracking-[0.35em] font-normal;
+    @apply flex items-center gap-3 uppercase text-[12px] tracking-[0.3em] font-medium;
   }
   .eyebrow > span:first-child {
     @apply font-mono text-signal tracking-normal font-medium;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-3 bg-signal text-cream px-6 py-3.5 uppercase text-[11px] tracking-[0.18em] font-semibold transition-colors hover:bg-ember;
+    @apply inline-flex items-center justify-center gap-3 bg-signal text-cream px-6 py-3.5 uppercase text-[12px] tracking-[0.16em] font-semibold transition-colors hover:bg-ember;
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-3 border border-ink/50 text-ink px-6 py-3.5 uppercase text-[11px] tracking-[0.18em] font-medium transition-colors hover:bg-ink hover:text-cream;
+    @apply inline-flex items-center justify-center gap-3 border border-ink/50 text-ink px-6 py-3.5 uppercase text-[12px] tracking-[0.16em] font-semibold transition-colors hover:bg-ink hover:text-cream;
   }
 
   .chip {
-    @apply font-mono uppercase text-[9px] tracking-[0.12em] border border-signal/60 text-ink-soft px-2 py-1;
+    @apply font-mono uppercase text-[10px] tracking-[0.1em] border border-signal/70 text-ink px-2 py-1;
   }
 
   /* Fondo de boceto (la hoja de construcción del cerebro) */
   .sketch-bg {
     background-image:
-      linear-gradient(var(--sketch-tint, rgba(243, 218, 162, 0.55)), var(--sketch-tint, rgba(243, 218, 162, 0.55))),
+      linear-gradient(var(--sketch-tint, rgba(243, 218, 162, 0.76)), var(--sketch-tint, rgba(243, 218, 162, 0.76))),
       url('/sketch.webp');
     background-size: cover;
     background-position: center;
