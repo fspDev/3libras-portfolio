@@ -902,14 +902,10 @@ export default function App() {
               Sitios web, apps e identidades visuales. Conectamos ideas y les damos la forma exacta que tu proyecto necesita.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Magnetic>
-                <button onClick={openForm} className="btn-primary group">
-                  Iniciar un proyecto <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </Magnetic>
-              <Magnetic>
-                <a href="#metodo" className="btn-ghost">Ver el método</a>
-              </Magnetic>
+              <button onClick={openForm} className="btn-primary group">
+                Iniciar un proyecto <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+              <a href="#metodo" className="btn-ghost">Ver el método</a>
             </div>
             <p className="mt-8 label-mono text-ink-soft">Diseño web — Desarrollo app — Identidad visual</p>
           </motion.div>
