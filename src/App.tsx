@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionV
 import {
   ArrowRight,
   ArrowUpRight,
+  Play,
   Monitor,
   Smartphone,
   PanelsTopLeft,
@@ -19,74 +20,102 @@ const SERVICES = [
     id: 'web',
     name: 'Diseño Web',
     ratio: '1.618',
-    tagline: 'Interfaces precisas y funcionales.',
-    desc: 'Arquitectura de información, UX/UI y desarrollo front-end. Sitios que se entienden al primer vistazo y crecen sin perder su orden.',
-    tags: ['UX/UI', 'React', 'TypeScript', 'SEO técnico'],
+    tagline: 'Sitios que explican tu negocio y generan consultas.',
+    tags: ['Sitio institucional', 'Landing page', 'Catálogo', 'SEO'],
     icon: Monitor,
     process: [
-      { step: '01', title: 'Análisis de Datos', desc: 'Descomposición de requerimientos y objetivos de usuario.' },
-      { step: '02', title: 'Arquitectura', desc: 'Estructuración de flujos y jerarquías de información.' },
-      { step: '03', title: 'Resolución Visual', desc: 'Síntesis estética basada en principios geométricos.' },
-      { step: '04', title: 'Despliegue', desc: 'Optimización de performance y puesta en producción.' }
+      { step: '01', title: 'Entendemos tu negocio', desc: 'Qué ofrecés, a quién y qué tiene que lograr el sitio.' },
+      { step: '02', title: 'Ordenamos el contenido', desc: 'Secciones claras para que se entienda en segundos.' },
+      { step: '03', title: 'Diseñamos', desc: 'Una estética propia, prolija y fácil de usar.' },
+      { step: '04', title: 'Publicamos', desc: 'Online, rápido y listo para aparecer en Google.' }
     ]
   },
   {
     id: 'app',
-    name: 'Desarrollo App',
+    name: 'Apps a medida',
     ratio: '1',
-    tagline: 'Soluciones móviles nativas.',
-    desc: 'Aplicaciones y web apps que convierten procesos complejos en flujos simples, del panel de gestión al bolsillo.',
-    tags: [],
+    tagline: 'Sistemas para gestionar tu negocio desde el celular o la compu.',
+    tags: ['Apps de gestión', 'Paneles', 'Instalable en el celular'],
     icon: Smartphone,
     process: [
-      { step: '01', title: 'Definición Lógica', desc: 'Mapeo de funcionalidades y casos de borde.' },
-      { step: '02', title: 'Sistemas Core', desc: 'Desarrollo de la infraestructura y lógica de negocio.' },
-      { step: '03', title: 'Interfaz Dinámica', desc: 'Implementación de componentes reactivos y animaciones.' },
-      { step: '04', title: 'Iteración', desc: 'Testeo de estrés y refinamiento continuo.' }
+      { step: '01', title: 'Definimos qué tiene que hacer', desc: 'Las tareas que hoy te llevan tiempo.' },
+      { step: '02', title: 'Construimos la base', desc: 'Datos seguros y lógica de tu negocio.' },
+      { step: '03', title: 'Diseñamos las pantallas', desc: 'Simples, para usar sin capacitación.' },
+      { step: '04', title: 'Probamos y mejoramos', desc: 'Con uso real, hasta que funcione redondo.' }
     ]
   },
   {
     id: 'brand',
     name: 'Identidad Visual',
     ratio: '0.618',
-    tagline: 'Sistemas gráficos analíticos.',
-    desc: 'Marcas construidas sobre geometría: retículas y proporciones que sostienen cada pieza, de la pantalla a la gran escala.',
-    tags: [],
+    tagline: 'Logo y estilo visual para que tu marca se reconozca en todos lados.',
+    tags: ['Logo', 'Colores y tipografías', 'Manual de marca'],
     icon: PanelsTopLeft,
     process: [
-      { step: '01', title: 'Abstracción', desc: 'Identificación de los axiomas centrales de la marca.' },
-      { step: '02', title: 'Geometrización', desc: 'Construcción técnica de símbolos y logotipos.' },
-      { step: '03', title: 'Sistema Gráfico', desc: 'Desarrollo de paletas y tipografías coherentes.' },
-      { step: '04', title: 'Manual de Uso', desc: 'Protocolos de aplicación y escalabilidad.' }
+      { step: '01', title: 'Buscamos la esencia', desc: 'Qué te diferencia y cómo querés que te vean.' },
+      { step: '02', title: 'Diseñamos el logo', desc: 'Construido con geometría y proporción.' },
+      { step: '03', title: 'Armamos el sistema', desc: 'Colores, tipografías y aplicaciones.' },
+      { step: '04', title: 'Entregamos el manual', desc: 'Para usar la marca siempre igual.' }
     ]
   },
 ];
 
 const METHOD = [
-  { mult: '×1', title: 'Análisis', desc: 'Descomponemos el problema en sus axiomas: objetivo, público, restricciones y datos reales. Primero entender, después diseñar.' },
-  { mult: '×φ', title: 'Síntesis', desc: 'Cruzamos referencias, datos e intuición. Como en una sinapsis, cada nueva relación abre un camino que antes no existía.' },
-  { mult: '×φ²', title: 'Resolución', desc: 'Ordenamos la idea con retícula, jerarquía y ritmo. La solución final es simple porque todo lo complejo quedó resuelto antes.' },
+  { mult: '×1', title: 'Análisis', desc: 'Entendemos el objetivo, el público y los datos.' },
+  { mult: '×φ', title: 'Síntesis', desc: 'Cruzamos ideas hasta encontrar la solución.' },
+  { mult: '×φ²', title: 'Resolución', desc: 'La llevamos a algo simple que funciona.' },
 ];
 
-const PROJECTS = [
+type Project = {
+  id: string;
+  title: string;
+  category: string;
+  year: string;
+  desc: string;
+  tags: string[];
+  img: string;
+  video: string;
+  length: string;
+  url: string;
+  product?: string;
+};
+
+const PROJECTS: Project[] = [
+  {
+    id: 'gym',
+    title: 'App para gimnasios',
+    category: 'Producto · App',
+    year: '2026',
+    product: 'Producto listo · personalizable',
+    desc: 'Una app lista para cualquier gimnasio, con su nombre, logo y colores. El profe arma planes y controla cuotas; el socio entrena desde el celular.',
+    tags: ['Tu marca', 'Planes y rutinas', 'Cuotas', 'Se instala en el celular'],
+    img: '/gym.jpg',
+    video: '/videos/gym-app.mp4',
+    length: '0:47',
+    url: 'https://fspdev.github.io/app-gym-muestra/'
+  },
   {
     id: 'summa',
     title: 'Summa',
     category: 'Web App',
     year: '2025',
-    tech: ['React', 'Cloud Run', 'Tailwind'],
-    desc: 'Plataforma de gestión empresarial con arquitectura cloud escalable.',
+    desc: 'Plataforma de gestión para empresas, en la nube.',
+    tags: ['React', 'Cloud Run', 'Tailwind'],
     img: '/summa.png',
+    video: '/videos/summa.mp4',
+    length: '0:22',
     url: 'https://summa-version-de-muestra-1031727346698.us-west1.run.app/'
   },
   {
     id: 'cioflex',
     title: 'Cioflex',
-    category: 'Web',
+    category: 'Sitio web',
     year: '2025',
-    tech: ['HTML5', 'CSS', 'JS', 'SEO'],
-    desc: 'Arquitectura de información y SEO técnico para especialistas en cartelería corporativa.',
+    desc: 'Sitio y SEO para una empresa de cartelería corporativa.',
+    tags: ['HTML5', 'CSS', 'JS', 'SEO'],
     img: '/cioflex.png',
+    video: '/videos/cioflex.mp4',
+    length: '0:22',
     url: 'https://www.cioflex.com.ar/'
   },
   {
@@ -94,15 +123,17 @@ const PROJECTS = [
     title: 'ControlX Syncro',
     category: 'Dashboard',
     year: '2024',
-    tech: ['React', 'D3.js', 'GitHub Pages'],
-    desc: 'Sistema de monitoreo y sincronización de procesos industriales en tiempo real.',
+    desc: 'Panel para monitorear procesos industriales en tiempo real.',
+    tags: ['React', 'D3.js'],
     img: '/syncro.png',
+    video: '/videos/controlx.mp4',
+    length: '0:21',
     url: 'https://fspdev.github.io/controlx-syncro2/'
   }
 ];
 
 const NAV = [
-  { href: '#capacidades', label: 'Capacidades' },
+  { href: '#capacidades', label: 'Servicios' },
   { href: '#metodo', label: 'Método' },
   { href: '#proyectos', label: 'Proyectos' },
   { href: '#filosofia', label: 'Filosofía' },
@@ -543,20 +574,6 @@ const SectionHeader = ({ prefix, label, title, light = false }: { prefix: string
   </div>
 );
 
-// Retícula áurea superpuesta en las capturas de proyectos (varía por índice como en el diseño)
-const GoldenOverlay = ({ variant }: { variant: number }) => {
-  const paths = [
-    'M618 0V618 M618 382H1000 M618 382V618 M764 382V618 M618 472H764 M673 382V472',
-    'M382 0V618 M0 382H382 M236 382V618 M236 472H382 M291 382V472',
-    'M382 0V618 M0 236H382 M236 0V236 M236 146H382 M291 146V236',
-  ];
-  return (
-    <svg viewBox="0 0 1000 618" preserveAspectRatio="none" className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
-      <path d={paths[variant % paths.length]} stroke="#C9A86B" strokeWidth="1.5" fill="none" vectorEffect="non-scaling-stroke" />
-    </svg>
-  );
-};
-
 const GoldenDiagram = () => (
   <figure className="w-full max-w-md lg:ml-auto">
     <svg viewBox="0 0 420 300" className="w-full" aria-label="Rectángulo áureo: (a + b) / a = a / b = φ">
@@ -609,7 +626,7 @@ const ServiceDetail = ({ service, onClose }: { service: typeof SERVICES[0]; onCl
       <div>
         <span className="label-mono text-signal">Protocolo // {service.id}</span>
         <h3 className="text-[34px] leading-none mt-3 mb-6">{service.name}</h3>
-        <p className="text-[15px] leading-relaxed text-ink-soft">{service.desc}</p>
+        <p className="text-[15px] leading-relaxed text-ink-soft">{service.tagline}</p>
         <service.icon className="w-12 h-12 text-signal opacity-40 mt-8" strokeWidth={1.25} />
       </div>
       <div className="md:col-span-2 space-y-5">
@@ -698,9 +715,122 @@ const reveal = {
   transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
 };
 
+// Reproductor a pantalla completa con sonido y controles
+const VideoModal = ({ project, onClose }: { project: Project; onClose: () => void }) => {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-ink/90 backdrop-blur-sm"
+    >
+      <motion.div
+        initial={{ y: 20, scale: 0.97, opacity: 0 }}
+        animate={{ y: 0, scale: 1, opacity: 1 }}
+        exit={{ y: 20, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-5xl"
+      >
+        <div className="flex items-center justify-between mb-3 text-cream">
+          <span className="label-mono">{project.title} — {project.category}</span>
+          <button onClick={onClose} aria-label="Cerrar video" className="hover:text-signal transition-colors">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        <video src={project.video} poster={project.img} controls autoPlay playsInline className="w-full aspect-video bg-black border border-cream/10 shadow-2xl" />
+        <div className="mt-3 flex justify-end">
+          <a href={project.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 label-mono text-cream hover:text-signal transition-colors">
+            {project.product ? 'Probar la demo' : 'Visitar el sitio'} <ArrowUpRight className="w-3.5 h-3.5" />
+          </a>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// Fila de proyecto: la miniatura reproduce una vista previa muda al pasar el mouse y abre el video al hacer clic
+const ProjectRow = ({ project: p, index, onPlay, onContact }: { project: Project; index: number; onPlay: (p: Project) => void; onContact: () => void; key?: string }) => {
+  const vid = useRef<HTMLVideoElement>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const preview = (on: boolean) => {
+    const v = vid.current;
+    if (!v) return;
+    if (on) v.play().catch(() => {});
+    else { v.pause(); setPreviewing(false); }
+  };
+
+  return (
+    <motion.li {...reveal} className="border-b border-line">
+      <div className="grid sm:grid-cols-[1.1fr_1fr] gap-6 sm:gap-10 py-8 items-center">
+        <button
+          onClick={() => onPlay(p)}
+          onPointerEnter={(e) => e.pointerType === 'mouse' && preview(true)}
+          onPointerLeave={() => preview(false)}
+          data-cursor="Play"
+          aria-label={`Ver video de ${p.title}`}
+          className="group/thumb relative block w-full aspect-video overflow-hidden border border-line bg-ink"
+        >
+          <img src={p.img} alt="" className="absolute inset-0 w-full h-full object-cover object-top sepia-[.3] group-hover/thumb:sepia-0 group-hover/thumb:scale-[1.03] transition-all duration-700" />
+          <video
+            ref={vid}
+            src={p.video}
+            muted
+            loop
+            playsInline
+            preload="none"
+            onPlaying={() => setPreviewing(true)}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${previewing ? 'opacity-100' : 'opacity-0'}`}
+          />
+          <span className="absolute inset-0 flex items-center justify-center">
+            <span className="w-16 h-16 rounded-full bg-cream/95 text-ink flex items-center justify-center shadow-xl group-hover/thumb:scale-110 group-hover/thumb:bg-signal group-hover/thumb:text-cream transition-all duration-300">
+              <Play className="w-6 h-6 ml-1" fill="currentColor" />
+            </span>
+          </span>
+          <span className="absolute left-2 bottom-2 bg-ink/90 text-cream label-mono px-2 py-1">Video · {p.length}</span>
+        </button>
+
+        <div>
+          <div className="flex justify-between font-mono text-[11px] text-ink-soft">
+            <span>{String(index + 1).padStart(2, '0')} · {p.category}</span>
+            <span>{p.year}</span>
+          </div>
+          {p.product && <span className="mt-3 inline-block bg-signal text-cream label-mono px-2 py-1">{p.product}</span>}
+          <h3 className="mt-2 text-[30px] sm:text-[36px] font-medium tracking-[-0.02em] leading-tight">{p.title}</h3>
+          <p className="mt-2 text-[16px] leading-relaxed max-w-lg">{p.desc}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {p.tags.map((t) => <span key={t} className="chip">{t}</span>)}
+          </div>
+          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <button onClick={() => onPlay(p)} className="inline-flex items-center gap-2 uppercase text-[12px] tracking-[0.16em] font-semibold hover:text-signal transition-colors">
+              <Play className="w-3.5 h-3.5" fill="currentColor" /> Ver video
+            </button>
+            <a href={p.url} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-2 uppercase text-[12px] tracking-[0.16em] font-semibold hover:text-signal transition-colors">
+              {p.product ? 'Probar la demo' : 'Visitar el sitio'}
+              <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </a>
+            {p.product && (
+              <button onClick={onContact} className="btn-primary group">
+                Quiero la de mi gimnasio <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.li>
+  );
+};
+
 export default function App() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<typeof SERVICES[0] | null>(null);
+  const [playing, setPlaying] = useState<Project | null>(null);
   const openForm = () => setIsFormOpen(true);
   const finePointer = useFinePointer();
   const logoSlot = useRef<HTMLAnchorElement>(null);
@@ -716,6 +846,7 @@ export default function App() {
       <AnimatePresence>
         {isFormOpen && <ContactForm onClose={() => setIsFormOpen(false)} />}
         {selectedService && <ServiceDetail service={selectedService} onClose={() => setSelectedService(null)} />}
+        {playing && <VideoModal project={playing} onClose={() => setPlaying(null)} />}
       </AnimatePresence>
 
       {/* HERO */}
@@ -730,7 +861,7 @@ export default function App() {
               <span className="text-ember font-medium">Soluciones en<br />proporción.</span>
             </h1>
             <p className="mt-6 max-w-md text-[17px] leading-relaxed text-ink">
-              Pensamos como una red neuronal y construimos como una ecuación: conectamos ideas, datos e intuición, y les damos la forma exacta para resolver lo que tu proyecto necesita.
+              Sitios web, apps e identidades visuales. Conectamos ideas y les damos la forma exacta que tu proyecto necesita.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Magnetic>
@@ -761,11 +892,11 @@ export default function App() {
       <section id="capacidades" className="sketch-bg py-20 sm:py-24 scroll-mt-16" style={{ ['--sketch-tint' as string]: 'rgba(243, 218, 162, 0.84)' }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-8">
           <motion.div {...reveal} className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <SectionHeader prefix="01" label="Capacidades" title={<>Tres disciplinas, un mismo<br className="hidden sm:block" /> sistema de pensamiento.</>} />
+            <SectionHeader prefix="01" label="Servicios" title="Qué hacemos." />
             <span className="label-mono text-ink-soft">Retícula 1 : 0,618</span>
           </motion.div>
 
-          <div className="mt-10 grid grid-cols-1 md:grid-cols-[1.618fr_1fr] md:grid-rows-2 gap-4">
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4">
             {SERVICES.map((s, i) => (
               <motion.button
                 key={s.id}
@@ -773,22 +904,25 @@ export default function App() {
                 transition={{ ...reveal.transition, delay: i * 0.1 }}
                 onClick={() => setSelectedService(s)}
                 data-cursor="Abrir"
-                className={`group flex flex-col justify-start text-left bg-card/90 border border-line/80 p-6 sm:p-7 hover:border-signal hover:bg-cream/80 transition-colors ${i === 0 ? 'md:row-span-2' : ''}`}
+                className="group flex flex-col text-left bg-card/90 border border-line/80 p-6 sm:p-7 hover:border-signal hover:bg-cream/80 transition-colors"
               >
                 <div className="flex justify-between items-start">
-                  <s.icon className="w-6 h-6 text-signal" strokeWidth={1.25} />
+                  <span className="w-11 h-11 rounded-full border border-signal/50 flex items-center justify-center text-signal group-hover:bg-signal group-hover:text-cream transition-colors">
+                    <s.icon className="w-5 h-5" strokeWidth={1.5} />
+                  </span>
                   <span className="font-mono text-[11px] text-ink-soft">{s.ratio}</span>
                 </div>
-                <h3 className="mt-5 uppercase text-[13px] tracking-[0.22em] font-semibold">{s.name}</h3>
-                <p className={`mt-3 ${i === 0 ? 'text-[20px]' : 'text-[17px]'} font-normal`}>{s.tagline}</p>
-                <p className="mt-4 text-[15px] leading-relaxed text-ink-soft max-w-md">{s.desc}</p>
-                {s.tags.length > 0 && (
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    {s.tags.map((t) => <span key={t} className="chip">{t}</span>)}
-                  </div>
-                )}
-                <span className="mt-6 inline-flex items-center gap-2 label-mono text-signal opacity-0 group-hover:opacity-100 transition-opacity">
-                  Ver protocolo <ArrowRight className="w-3 h-3" />
+                <h3 className="mt-5 text-[24px] font-medium tracking-[-0.01em]">{s.name}</h3>
+                <p className="mt-2 text-[16px] leading-snug text-ink-soft">{s.tagline}</p>
+                <ul className="mt-5 space-y-2 border-t border-line/70 pt-4 flex-1">
+                  {s.tags.map((t) => (
+                    <li key={t} className="flex items-center gap-2.5 text-[15px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-signal flex-none" />{t}
+                    </li>
+                  ))}
+                </ul>
+                <span className="mt-6 inline-flex items-center gap-2 label-mono text-signal">
+                  Cómo trabajamos <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                 </span>
               </motion.button>
             ))}
@@ -807,7 +941,7 @@ export default function App() {
               title={<>Pensar como una red.<br /><span className="text-[#E9A866]">Resolver como una ecuación.</span></>}
             />
             <p className="text-[16px] leading-relaxed text-cream/85">
-              La creatividad no es un destello aislado: es una conexión nueva entre ideas que ya existían. Nuestro proceso multiplica esas conexiones y después las ordena con proporción, hasta que la solución encaja.
+              Primero conectamos ideas. Después las ordenamos con proporción, hasta que la solución encaja.
             </p>
           </motion.div>
 
@@ -840,33 +974,7 @@ export default function App() {
 
           <ul className="mt-12 border-t border-line">
             {PROJECTS.map((p, i) => (
-              <motion.li key={p.id} {...reveal} className="border-b border-line">
-                <a href={p.url} target="_blank" rel="noopener noreferrer" data-cursor="Ver ↗" className="group grid sm:grid-cols-[1fr_1.618fr] gap-6 sm:gap-10 py-6 items-center">
-                  <div className="relative aspect-[1.618/1] overflow-hidden border border-line bg-card">
-                    <img
-                      src={p.img}
-                      alt={`Captura de ${p.title}`}
-                      className="w-full h-full object-cover object-top sepia-[.55] opacity-80 group-hover:sepia-0 group-hover:opacity-100 group-hover:scale-[1.03] transition-all duration-700"
-                    />
-                    <div className="absolute inset-0 group-hover:opacity-0 transition-opacity duration-700">
-                      <GoldenOverlay variant={i} />
-                    </div>
-                    <span className="absolute left-2 bottom-2 bg-ink text-cream label-mono px-2 py-1">[Captura · {p.title}]</span>
-                  </div>
-                  <div>
-                    <div className="flex justify-between font-mono text-[11px] text-ink-soft">
-                      <span>{String(i + 1).padStart(2, '0')}</span>
-                      <span>{p.year}</span>
-                    </div>
-                    <h3 className="mt-2 text-[30px] sm:text-[36px] uppercase font-normal tracking-[-0.01em] group-hover:text-signal transition-colors">{p.title}</h3>
-                    <p className="mt-1 label-mono text-signal">{p.category} // {p.tech.join(', ')}</p>
-                    <p className="mt-3 text-[16px] leading-relaxed max-w-lg">{p.desc}</p>
-                    <span className="mt-4 inline-flex items-center gap-2 uppercase text-[11px] tracking-[0.18em] font-semibold">
-                      Ver proyecto <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                    </span>
-                  </div>
-                </a>
-              </motion.li>
+              <ProjectRow key={p.id} project={p} index={i} onPlay={setPlaying} onContact={openForm} />
             ))}
           </ul>
         </div>
@@ -878,8 +986,8 @@ export default function App() {
           <motion.div {...reveal}>
             <SectionHeader prefix="04" label="Filosofía" title={<>La precisión es la<br />única <span className="text-ember font-medium">estética honesta.</span></>} />
             <div className="mt-8 bg-card/90 border border-line/80 p-6 grid sm:grid-cols-2 gap-6 text-[15px] leading-relaxed">
-              <p>Descomponemos problemas complejos en axiomas geométricos. El diseño no es arte; es la resolución visual de una ecuación de datos.</p>
-              <p>Cada pixel en 3 Libras responde a una intención técnica. Respetamos la arquitectura del pensamiento para construir interfaces que funcionen como extensiones de la mente.</p>
+              <p>Llevamos cada problema a lo esencial. El diseño es la respuesta visual a esa ecuación.</p>
+              <p>Cada pixel tiene una razón. Así hacemos interfaces que se usan sin pensar.</p>
             </div>
           </motion.div>
           <motion.div {...reveal} transition={{ ...reveal.transition, delay: 0.15 }}>
