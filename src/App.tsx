@@ -139,7 +139,6 @@ const NAV = [
   { href: '#filosofia', label: 'Filosofía' },
 ];
 
-const FIBONACCI = [1, 1, 2, 3, 5, 8, 13, 21, 34];
 
 // Nodos sinápticos sobre el cerebro (coordenadas de la imagen 1536×1024)
 const SYNAPSES: [number, number][] = [
@@ -517,52 +516,106 @@ const Navbar = ({ onContact, slotRef, slotWidth }: { onContact: () => void; slot
   );
 };
 
-const SynapticBrain = () => (
-  <div className="relative w-full aspect-[3/2] scale-[1.12] origin-center">
-    <img
-      src="/brain.webp"
-      alt="Cerebro de papel plegado"
-      className="absolute inset-0 w-full h-full object-contain mix-blend-multiply"
-    />
-    <svg viewBox="0 0 1536 1024" className="absolute inset-0 w-full h-full" aria-hidden="true">
-      {SYNAPSE_LINKS.map(([a, b], i) => (
-        <line
-          key={i}
-          x1={SYNAPSES[a][0]} y1={SYNAPSES[a][1]}
-          x2={SYNAPSES[b][0]} y2={SYNAPSES[b][1]}
-          stroke="#FFF6DE"
-          strokeWidth="1.5"
-          className="synapse-line"
-          style={{ opacity: 0.55, animationDelay: `${i * 0.13}s` }}
-        />
-      ))}
-      {SYNAPSES.map(([x, y], i) => (
-        <circle
-          key={i}
-          cx={x} cy={y} r="7"
-          fill="#FFF8E6"
-          className="synapse-node"
-          style={{ animationDelay: `${(i * 0.37) % 3}s`, filter: 'drop-shadow(0 0 6px rgba(255,240,200,.9))' }}
-        />
-      ))}
-    </svg>
-  </div>
-);
-
-const FibonacciRuler = () => (
-  <div className="border-y border-line/70 bg-paper-2/60" aria-hidden="true">
-    <div className="max-w-6xl mx-auto px-4 sm:px-8 flex h-9">
-      {FIBONACCI.map((n, i) => (
-        <div key={i} className="border-l border-line/70 pl-1.5 flex items-center label-mono text-ink-soft min-w-0" style={{ flexGrow: n, flexBasis: 0 }}>
-          <span className="truncate">{n}</span>
-        </div>
-      ))}
-      <div className="border-x border-line/70 flex items-center justify-end pr-2 label-mono text-ink-soft" style={{ flexGrow: 8, flexBasis: 0 }}>
-        → ∞
-      </div>
+// Desplaza el contenido respecto del fondo mientras la sección cruza la pantalla.
+const Parallax = ({ children, distance = 140 }: { children: ReactNode; distance?: number }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
+  const y = useSpring(useTransform(scrollYProgress, [0, 1], [distance, -distance]), { stiffness: 120, damping: 30, mass: 0.4 });
+  return (
+    <div ref={ref}>
+      <motion.div style={{ y }}>{children}</motion.div>
     </div>
-  </div>
-);
+  );
+};
+
+// Inclina la figura hacia el cursor, como si se la mirara de costado.
+const Tilt = ({ children, max = 24, spin = 22 }: { children: ReactNode; max?: number; spin?: number }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const spring = { stiffness: 150, damping: 18, mass: 0.5 };
+  const rx = useSpring(0, spring);
+  const ry = useSpring(0, spring);
+  const rz = useSpring(0, spring);
+  return (
+    <div
+      ref={ref}
+      style={{ perspective: 900 }}
+      onPointerMove={(e) => {
+        if (e.pointerType !== 'mouse' || !ref.current) return;
+        const r = ref.current.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        rx.set(-py * max);
+        ry.set(px * max);
+        rz.set(px * spin);
+      }}
+      onPointerLeave={() => { rx.set(0); ry.set(0); rz.set(0); }}
+    >
+      <motion.div style={{ rotateX: rx, rotateY: ry, rotate: rz }}>{children}</motion.div>
+    </div>
+  );
+};
+
+const SynapticBrain = () => {
+  const [pointer, setPointer] = useState<[number, number] | null>(null);
+  // Cercanía (0–1) de cada nodo al cursor, en coordenadas del viewBox.
+  const near = SYNAPSES.map(([x, y]) => (pointer ? Math.max(0, 1 - Math.hypot(x - pointer[0], y - pointer[1]) / 260) : 0));
+  const reached = pointer
+    ? SYNAPSES.map((p, i) => [i, Math.hypot(p[0] - pointer[0], p[1] - pointer[1])] as const)
+        .filter(([, d]) => d < 260).sort((a, b) => a[1] - b[1]).slice(0, 3)
+    : [];
+  return (
+    <div className="relative w-full aspect-[3/2] scale-[1.12] origin-center">
+      <img
+        src="/brain.webp"
+        alt="Cerebro de papel plegado"
+        className="absolute inset-0 w-full h-full object-contain mix-blend-multiply"
+      />
+      <svg
+        viewBox="0 0 1536 1024"
+        className="absolute inset-0 w-full h-full"
+        aria-hidden="true"
+        onPointerMove={(e) => {
+          if (e.pointerType !== 'mouse') return;
+          const r = e.currentTarget.getBoundingClientRect();
+          setPointer([((e.clientX - r.left) / r.width) * 1536, ((e.clientY - r.top) / r.height) * 1024]);
+        }}
+        onPointerLeave={() => setPointer(null)}
+      >
+        {pointer && reached.map(([i, d]) => (
+          <line
+            key={`reach-${i}`}
+            x1={pointer[0]} y1={pointer[1]}
+            x2={SYNAPSES[i][0]} y2={SYNAPSES[i][1]}
+            stroke="#C8772A"
+            strokeWidth="3.5"
+            strokeLinecap="round"
+            style={{ opacity: 0.9 * (1 - d / 260) }}
+          />
+        ))}
+        {SYNAPSE_LINKS.map(([a, b], i) => (
+          <line
+            key={i}
+            x1={SYNAPSES[a][0]} y1={SYNAPSES[a][1]}
+            x2={SYNAPSES[b][0]} y2={SYNAPSES[b][1]}
+            stroke="#FFF6DE"
+            strokeWidth="1.5"
+            className="synapse-line"
+            style={{ opacity: 0.55 + 0.45 * Math.max(near[a], near[b]), animationDelay: `${i * 0.13}s`, transition: 'opacity .3s' }}
+          />
+        ))}
+        {SYNAPSES.map(([x, y], i) => (
+          <circle
+            key={i}
+            cx={x} cy={y} r={7 + near[i] * 7}
+            fill="#FFF8E6"
+            className="synapse-node"
+            style={{ animationDelay: `${(i * 0.37) % 3}s`, filter: `drop-shadow(0 0 ${6 + near[i] * 10}px rgba(255,240,200,.9))`, transition: 'r .25s' }}
+          />
+        ))}
+      </svg>
+    </div>
+  );
+};
 
 const SectionHeader = ({ prefix, label, title, light = false }: { prefix: string; label: string; title: ReactNode; light?: boolean }) => (
   <div>
@@ -574,27 +627,12 @@ const SectionHeader = ({ prefix, label, title, light = false }: { prefix: string
   </div>
 );
 
-const GoldenDiagram = () => (
-  <figure className="w-full max-w-md lg:ml-auto">
-    <svg viewBox="0 0 420 300" className="w-full" aria-label="Rectángulo áureo: (a + b) / a = a / b = φ">
-      <g stroke="#7A6347" strokeWidth="1" fill="none">
-        <path d="M10 18H410 M10 13V23 M410 13V23" />
-      </g>
-      <text x="210" y="10" textAnchor="middle" className="font-mono" fontSize="11" fill="#5A4632">a + b</text>
-      <rect x="10" y="32" width="400" height="247" fill="rgba(246,227,184,.55)" stroke="#5A4632" strokeWidth="1.2" />
-      <g stroke="#C8772A" strokeWidth="1.2" fill="none">
-        <path d="M257 32V279" />
-        <path d="M257 185H410 M316 185V279 M257 222H316" />
-      </g>
-      <path d="M10 32L257 279" stroke="#7A6347" strokeWidth=".8" strokeDasharray="3 4" />
-      <text x="133" y="296" textAnchor="middle" fontSize="11" fill="#C8772A" className="font-mono">a</text>
-      <text x="333" y="296" textAnchor="middle" fontSize="11" fill="#5A4632" className="font-mono">b</text>
-    </svg>
-    <figcaption className="mt-4">
-      <p className="font-mono text-[15px] text-ink">(a + b) / a = a / b = <span className="text-signal">φ</span></p>
-      <p className="label-mono text-ink-soft mt-1">La proporción que ordena la intuición.</p>
-    </figcaption>
-  </figure>
+const Nautilus = () => (
+  <img
+    src="/nautilus.webp"
+    alt="Corte de un nautilus, espiral áurea natural"
+    className="w-full max-w-md lg:ml-auto opacity-70 drop-shadow-[0_18px_30px_rgba(90,70,50,0.25)]"
+  />
 );
 
 const Modal = ({ onClose, children, wide = false }: { onClose: () => void; children: ReactNode; wide?: boolean }) => (
@@ -877,7 +915,11 @@ export default function App() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, scale: 0.96 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 1.2, delay: 0.2 }}>
-            <SynapticBrain />
+            <Parallax>
+              <Tilt>
+                <SynapticBrain />
+              </Tilt>
+            </Parallax>
           </motion.div>
         </div>
         <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-6 hidden sm:flex justify-end gap-24 label-mono text-ink-soft">
@@ -885,8 +927,6 @@ export default function App() {
           <span>Análisis → Síntesis → Resolución</span>
         </div>
       </section>
-
-      <FibonacciRuler />
 
       {/* 01 CAPACIDADES */}
       <section id="capacidades" className="sketch-bg py-20 sm:py-24 scroll-mt-16" style={{ ['--sketch-tint' as string]: 'rgba(243, 218, 162, 0.84)' }}>
@@ -991,7 +1031,11 @@ export default function App() {
             </div>
           </motion.div>
           <motion.div {...reveal} transition={{ ...reveal.transition, delay: 0.15 }}>
-            <GoldenDiagram />
+            <Parallax>
+              <Tilt>
+                <Nautilus />
+              </Tilt>
+            </Parallax>
           </motion.div>
         </div>
       </section>
