@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type ReactNode, type FormEvent, type RefObject } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useVelocity } from 'motion/react';
+import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useVelocity, useMotionValueEvent } from 'motion/react';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -167,6 +167,9 @@ function useFinePointer() {
   return fine;
 }
 
+// Evento con el que el cerebro le pasa al cursor su cercanía (0–1) al nodo más próximo.
+const SYNAPSE_EVENT = 'synapse-charge';
+
 /**
  * Cursor: punto instantáneo + anillo con resorte que se estira según la velocidad,
  * unidos por un filamento (la "sinapsis"). Reacciona a links y a [data-cursor="Etiqueta"].
@@ -188,6 +191,7 @@ const CustomCursor = () => {
   const [label, setLabel] = useState('');
   const [pressed, setPressed] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [charge, setCharge] = useState(0);
 
   useEffect(() => {
     document.documentElement.classList.add('has-custom-cursor');
@@ -201,6 +205,8 @@ const CustomCursor = () => {
     const down = () => setPressed(true);
     const up = () => setPressed(false);
     const leave = () => setVisible(false);
+    const synapse = (e: Event) => setCharge((e as CustomEvent<number>).detail);
+    window.addEventListener(SYNAPSE_EVENT, synapse);
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerover', over);
     window.addEventListener('pointerdown', down);
@@ -208,6 +214,7 @@ const CustomCursor = () => {
     document.documentElement.addEventListener('pointerleave', leave);
     return () => {
       document.documentElement.classList.remove('has-custom-cursor');
+      window.removeEventListener(SYNAPSE_EVENT, synapse);
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerover', over);
       window.removeEventListener('pointerdown', down);
@@ -218,6 +225,9 @@ const CustomCursor = () => {
 
   const size = mode === 'label' ? 86 : mode === 'hover' ? 54 : 30;
   const fill = mode === 'label' ? 'rgba(200,119,42,0.94)' : mode === 'hover' ? 'rgba(200,119,42,0.14)' : 'rgba(200,119,42,0)';
+  // Conectado a la red: el cursor toma la luz de los nodos.
+  const lit = mode === 'idle' && charge > 0;
+  const glow = `0 0 ${4 + charge * 18}px ${charge * 4}px rgba(255,236,190,${0.35 + charge * 0.55})`;
 
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[9999] transition-opacity duration-300" style={{ opacity: visible ? 1 : 0 }}>
@@ -227,8 +237,15 @@ const CustomCursor = () => {
       <motion.div className="absolute top-0 left-0 w-0 h-0 flex items-center justify-center" style={{ x: ringX, y: ringY }}>
         <motion.div className="flex items-center justify-center" style={{ rotate, scaleX, scaleY }}>
           <motion.div
-            className="flex-none rounded-full border border-signal"
-            animate={{ width: size, height: size, backgroundColor: fill, scale: pressed ? 0.78 : 1 }}
+            className="flex-none rounded-full border"
+            animate={{
+              width: size,
+              height: size,
+              backgroundColor: lit ? `rgba(255,246,222,${0.15 + charge * 0.35})` : fill,
+              borderColor: lit ? '#FFF6DE' : '#C8772A',
+              boxShadow: lit ? glow : '0 0 0px 0px rgba(255,236,190,0)',
+              scale: pressed ? 0.78 : lit ? 1 + charge * 0.25 : 1,
+            }}
             transition={{ type: 'spring', stiffness: 320, damping: 22 }}
           />
         </motion.div>
@@ -248,8 +265,13 @@ const CustomCursor = () => {
       </motion.div>
       <motion.div className="absolute top-0 left-0 w-0 h-0 flex items-center justify-center" style={{ x, y }}>
         <motion.span
-          className="block flex-none rounded-full bg-signal"
-          animate={{ width: mode === 'idle' ? 6 : 0, height: mode === 'idle' ? 6 : 0 }}
+          className="block flex-none rounded-full"
+          animate={{
+            width: mode === 'idle' ? 6 : 0,
+            height: mode === 'idle' ? 6 : 0,
+            backgroundColor: lit ? '#FFF8E6' : '#C8772A',
+            boxShadow: lit ? glow : '0 0 0px 0px rgba(255,236,190,0)',
+          }}
           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
         />
       </motion.div>
@@ -555,24 +577,66 @@ const Tilt = ({ children, max = 24, spin = 22 }: { children: ReactNode; max?: nu
   );
 };
 
+// Segundo del video en el que el cerebro ya está plegado; el plegado termina en ese cuadro.
+const BRAIN_FOLD_END = 5.4;
+// true: al terminar el plegado el video se funde a /brain.webp. false: queda el último cuadro del video.
+const SHOW_STILL_BRAIN = false;
+// Avance del plegado a partir del cual aparecen los nodos (y la imagen fija, si está activa).
+const BRAIN_FOLDED_AT = 0.97;
+// Caja del video (16:9) dentro del contenedor 3:2, calculada para que el cerebro
+// del último cuadro caiga exactamente sobre el de /brain.webp y el fundido no salte.
+const BRAIN_VIDEO_BOX = { left: '-13.7%', top: '-2.4%', width: '126%', height: '106.3%' };
+
 const SynapticBrain = () => {
   const [pointer, setPointer] = useState<[number, number] | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [folded, setFolded] = useState(false);
+  // El plegado avanza con el scroll: desde que el cerebro asoma hasta que queda centrado.
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'center center'] });
+  const fold = useSpring(scrollYProgress, { stiffness: 140, damping: 30, mass: 0.4 });
+  const scrub = () => {
+    const p = Math.min(Math.max(fold.get(), 0), 1);
+    const v = videoRef.current;
+    if (v && v.readyState >= 1) v.currentTime = p * BRAIN_FOLD_END;
+    setFolded(p >= BRAIN_FOLDED_AT);
+  };
+  useMotionValueEvent(fold, 'change', scrub);
+  // Si la página carga ya scrolleada, arranca en el punto que corresponde.
+  useEffect(scrub, []);
   // Cercanía (0–1) de cada nodo al cursor, en coordenadas del viewBox.
   const near = SYNAPSES.map(([x, y]) => (pointer ? Math.max(0, 1 - Math.hypot(x - pointer[0], y - pointer[1]) / 260) : 0));
   const reached = pointer
     ? SYNAPSES.map((p, i) => [i, Math.hypot(p[0] - pointer[0], p[1] - pointer[1])] as const)
         .filter(([, d]) => d < 260).sort((a, b) => a[1] - b[1]).slice(0, 3)
     : [];
+  const charge = folded && reached.length ? 1 - reached[0][1] / 260 : 0;
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(SYNAPSE_EVENT, { detail: charge }));
+  }, [charge]);
   return (
-    <div className="relative w-full aspect-[3/2] scale-[1.12] origin-center">
-      <img
-        src="/brain.webp"
-        alt="Cerebro de papel plegado"
-        className="absolute inset-0 w-full h-full object-contain mix-blend-multiply"
+    <div ref={ref} className="relative w-full aspect-[3/2] scale-[1.12] origin-center">
+      <video
+        ref={videoRef}
+        src="/videos/brain-fold.mp4"
+        muted
+        playsInline
+        preload="auto"
+        aria-label="Cerebro de papel plegándose"
+        onLoadedMetadata={scrub}
+        className={`absolute max-w-none transition-opacity duration-500 ${SHOW_STILL_BRAIN && folded ? 'opacity-0' : 'opacity-100'}`}
+        style={{ ...BRAIN_VIDEO_BOX, maskImage: 'radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%)', WebkitMaskImage: 'radial-gradient(ellipse 50% 50% at 50% 50%, #000 55%, transparent 100%)' }}
       />
+      {SHOW_STILL_BRAIN && (
+        <img
+          src="/brain.webp"
+          alt="Cerebro de papel plegado"
+          className={`absolute inset-0 w-full h-full object-contain mix-blend-multiply transition-opacity duration-500 ${folded ? 'opacity-100' : 'opacity-0'}`}
+        />
+      )}
       <svg
         viewBox="0 0 1536 1024"
-        className="absolute inset-0 w-full h-full"
+        className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${folded ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         aria-hidden="true"
         onPointerMove={(e) => {
           if (e.pointerType !== 'mouse') return;
@@ -911,11 +975,7 @@ export default function App() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, scale: 0.96 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 1.2, delay: 0.2 }}>
-            <Parallax>
-              <Tilt>
-                <SynapticBrain />
-              </Tilt>
-            </Parallax>
+            <SynapticBrain />
           </motion.div>
         </div>
         <div className="max-w-6xl mx-auto px-4 sm:px-8 pb-6 hidden sm:flex justify-end gap-24 label-mono text-ink-soft">
